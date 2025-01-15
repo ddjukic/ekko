@@ -1,0 +1,6 @@
+*.mp3
+*.txt
+__pycache__/
+chroma/
+ekko_prototype/feedback/
+*.logs.git_commit_tracker
