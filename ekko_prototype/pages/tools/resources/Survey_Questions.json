@@ -1,0 +1,56 @@
+{
+    "Problem Identification": [
+        {
+            "question": "Do you believe there is a widespread issue with digital content overload?",
+            "answers": [
+                "Yes",
+                "No"
+            ]
+        },
+        {
+            "question": "Do you have multiple ever-growing reading or watch-later lists?",
+            "answers": [
+                "Yes",
+                "No"
+            ]
+        },
+        {
+            "question": "How often do you find it challenging to filter out irrelevant or low-quality content to find what truly interests you?",
+            "answers": [
+                "Often - It's a frequent struggle.",
+                "Sometimes - I can get overwhelmed by too much new content.",
+                "Rarely - I generally find what I want.",
+                "Never - I don't search for new content actively.",
+                "It varies based on the platform."
+            ]
+        },
+        {
+            "question": "Do you experience FOMO (fear of missing out) when trying to keep up with the latest news and trends?",
+            "answers": [
+                "Several times a week - I often feel like I'm behind.",
+                "About once a week - Mainly with certain topics.",
+                "Occasionally - Only when something catches my interest.",
+                "Never - I don't follow trends.",
+                "It varies - Depending on how relevant the information is to my interests."
+            ]
+        },
+        {
+            "question": "Why is it important for you to keep up with the latest news and trends?",
+            "answers": [
+                "It's crucial for my professional development and career.",
+                "It helps me stay socially connected and informed.",
+                "I have a personal interest in certain topics and like to stay knowledgeable.",
+                "It makes me feel secure and in control of my environment.",
+                "I feel social pressure to be informed.",
+                "Other (please specify)"
+            ]
+        },
+        {
+            "question": "Would you be willing to answer more of our questions or do a live feedback session?",
+            "answers": [
+                "Yes! 🎉",
+                "No."
+            ]
+        }
+    ]
+}
