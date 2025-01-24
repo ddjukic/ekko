@@ -16,6 +16,7 @@ from ekko_prototype.pages.tools.summary_creator import TranscriptSummarizer
 from ekko_prototype.pages.tools.podcast_chatbot import ChatBotInterface
 # from ekko_prototype.pages.tools.audio_transcriber import calculate_ratio, estimate_processing_time
 from ekko_prototype.pages.tools.retry import retry
+from ekko_prototype.pages.tools.transcript_fetcher import UnifiedTranscriptFetcher, TranscriptConfig
 
 # TODO:
 # improve token security handling
@@ -69,7 +70,10 @@ def summarize_episode(episode_transcript):
         transcription_text = file.read()
 
     # Create the summary
-    summarizer = TranscriptSummarizer(system_file_path='./ekko/ekko_prototype/pages/tools/prompts/extract_wisdom_updated.md')
+    import os
+    prompt_path = os.path.join(os.path.dirname(__file__), 'pages', 'tools', 'prompts', 'extract_wisdom_updated.md')
+    creds_path = os.path.join(os.path.dirname(__file__), 'creds', 'openai_credentials.json')
+    summarizer = TranscriptSummarizer(system_file_path=prompt_path, credentials_file_path=creds_path)
     # write the summary stream
     summary = st.write_stream(summarizer.summarize_transcript(transcription_text))
 
@@ -105,7 +109,7 @@ def parse_time(time_string):
     
 
 # new feature that tells only the chat to reload, the rest stays
-@st.experimental_fragment
+@st.fragment
 def chat_with_podcast(episode_transcript, episode_title):
     
     if not os.path.exists(episode_transcript):
@@ -114,19 +118,23 @@ def chat_with_podcast(episode_transcript, episode_title):
 
     with st.spinner('Loading the chatbot...'):
         # Load the chatbot interface
+        creds_path = os.path.join(os.path.dirname(__file__), 'creds', 'openai_credentials.json')
         chatbot = ChatBotInterface(
-            transcript_path=episode_transcript
+            transcript_path=episode_transcript,
+            credentials_path=creds_path
         )
 
     chatbot.chat(episode_title)
 
-def display_episodes(episodes, num_episodes, feed_title):
+def display_episodes(episodes, num_episodes, feed_title, feed_url=None):
     """
     Displays a specified number of episodes as expandable elements with details and a 'Summarize episode' button.
 
     Args:
         episodes (list): A list of episode objects containing title, publication_date, and mp3_url.
         num_episodes (int): The number of episodes to display.
+        feed_title (str): The title of the podcast feed.
+        feed_url (str): The RSS feed URL of the podcast.
     """
     for episode in episodes[:num_episodes]:  # Only display up to num_episodes episodes
         episode_title = episode.title.strip()
@@ -146,33 +154,40 @@ def display_episodes(episodes, num_episodes, feed_title):
                         print(e)
                         print(f'unknowns time string format, {episode.duration}')
 
-                    # # The server-based download/transcribe flow
-                    # TODO:
-                    # provide a status update estimated based on the length of the episode
-                    with st.spinner('Transcribing episode...'):
-                        # st.write(f'Estimated processing time: {estimate_processing_time(h, m, s, ratio)}')
-                        st.write('Estimated processing time: ~1 minute')
-
-                        # transcription_file_path = transcribe_episode_request(episode, feed_title)
-                        transcription_file_path = simulate_transcription()
-                        if not transcription_file_path:
-                            st.error("Failed to transcribe episode.")
-                            return
-
-                        file_basename = os.path.basename(transcription_file_path)
-
-                        with st.spinner('Uploading the transcript...'):
-                            try:
-                                transcription_file_path = find_file(file_basename)[0]
-                            except Exception as e:
-                                st.error("Upload failed; please try clicking the 'Summarize episode' button again.")
+                    # Use intelligent transcript fetching
+                    with st.spinner('Fetching transcript (checking YouTube first, then Whisper)...'):
                         
-                        file_transcribed = os.path.exists(transcription_file_path)
-                        if file_transcribed:
-                            st.success(f"Transcription completed!")
-                        else:
-                            st.error(f"Transcription file not found at {transcription_file_path}; please try clicking the 'Summarize episode' again")
+                        # Initialize the unified transcript fetcher
+                        transcript_config = TranscriptConfig(
+                            prefer_youtube=True,
+                            use_remote_whisper=False,  # Use local Whisper for now
+                            cache_transcripts=True
+                        )
+                        fetcher = UnifiedTranscriptFetcher(transcript_config)
+                        
+                        # Get the transcript
+                        result = fetcher.get_transcript(
+                            podcast_name=feed_title,
+                            episode_title=episode_title,
+                            episode_audio_url=episode.mp3_url,
+                            podcast_rss_url=feed_url
+                        )
+                        
+                        if not result or not result.text:
+                            st.error("Failed to fetch transcript. Please try again.")
                             return
+                        
+                        # Save transcript to a temporary file
+                        import tempfile
+                        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, 
+                                                        dir='./transcripts' if os.path.exists('./transcripts') else None) as f:
+                            f.write(result.text)
+                            transcription_file_path = f.name
+                        
+                        # Show source of transcript
+                        st.success(f"Transcript obtained from: {result.source.value}")
+                        if result.metadata.get('youtube_url'):
+                            st.info(f"YouTube URL: {result.metadata['youtube_url']}")
                     
                     # summarize
                     with st.spinner('Summarizing episode...'):
@@ -240,7 +255,7 @@ def search_podcast():
                 
                 # Display episodes
                 st.subheader("Episodes:")
-                display_episodes(episodes, num_episodes, feed_title)
+                display_episodes(episodes, num_episodes, feed_title, feed_url)
 
 # TODO:
 # define the prompt inside the patterns with the user context 
