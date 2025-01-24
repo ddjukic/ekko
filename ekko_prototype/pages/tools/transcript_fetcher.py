@@ -16,6 +16,7 @@ from .audio_transcriber import EpisodeTranscriber
 from .episode_downloader import EpisodeDownloader
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 @dataclass
@@ -26,6 +27,7 @@ class TranscriptConfig:
     youtube_languages: list = field(default_factory=lambda: ['en'])
     whisper_model: str = "base"
     use_remote_whisper: bool = True
+    use_openai_whisper: bool = False  # Use OpenAI API instead of local/remote
     cache_transcripts: bool = True
     cache_directory: str = "./transcript_cache"
     max_cache_size_mb: int = 500
@@ -177,11 +179,16 @@ class UnifiedTranscriptFetcher:
         try:
             # Download audio file
             logger.info(f"Downloading audio for {episode_title}...")
+            logger.debug(f"Audio URL: {audio_url}")
+            logger.debug(f"Podcast name: {podcast_name}")
+            
             local_audio_path = self.episode_downloader.download_single_episode(
                 audio_url,
                 episode_title,
                 podcast_name
             )
+            
+            logger.debug(f"Audio downloaded to: {local_audio_path}")
             
             if not local_audio_path:
                 raise Exception("Failed to download audio file")
@@ -189,37 +196,65 @@ class UnifiedTranscriptFetcher:
             # Transcribe with Whisper
             logger.info(f"Transcribing {episode_title} with Whisper...")
             
-            if self.config.use_remote_whisper:
+            transcript_text = None
+            transcript_path = None
+            
+            if self.config.use_openai_whisper:
+                # Use OpenAI Whisper API
+                logger.info("Using OpenAI Whisper API for transcription")
+                from .openai_whisper_transcriber import OpenAIWhisperTranscriber
+                openai_transcriber = OpenAIWhisperTranscriber()
+                transcript_text = openai_transcriber.transcribe(
+                    local_audio_path,
+                    language='en',
+                    prompt=f"This is a podcast episode titled '{episode_title}' from {podcast_name}."
+                )
+                if transcript_text:
+                    # Save to file for consistency
+                    transcript_path = os.path.join('./transcripts', f"{episode_title}.txt")
+                    os.makedirs('./transcripts', exist_ok=True)
+                    with open(transcript_path, 'w', encoding='utf-8') as f:
+                        f.write(transcript_text)
+            elif self.config.use_remote_whisper:
                 # Use remote Whisper service via ngrok
                 transcript_path = self._transcribe_remote(
                     audio_url,
                     episode_title,
                     podcast_name
                 )
+                if transcript_path and os.path.exists(transcript_path):
+                    with open(transcript_path, 'r', encoding='utf-8') as f:
+                        transcript_text = f.read()
             else:
                 # Use local Whisper
                 transcript_path = self.audio_transcriber.transcribe(local_audio_path)
+                if transcript_path and os.path.exists(transcript_path):
+                    with open(transcript_path, 'r', encoding='utf-8') as f:
+                        transcript_text = f.read()
             
-            # Read transcript
-            if transcript_path and os.path.exists(transcript_path):
-                with open(transcript_path, 'r', encoding='utf-8') as f:
-                    transcript_text = f.read()
-                
+            # Check if we got a transcript
+            if transcript_text:
                 # Calculate quality score
                 quality_score = self.youtube_detector.calculate_quality_score(transcript_text)
                 
+                source = TranscriptSource.WHISPER_LOCAL
+                if self.config.use_openai_whisper:
+                    source = TranscriptSource.WHISPER_LOCAL  # Consider adding WHISPER_OPENAI
+                elif self.config.use_remote_whisper:
+                    source = TranscriptSource.WHISPER_REMOTE
+                
                 return TranscriptResult(
                     text=transcript_text,
-                    source=TranscriptSource.WHISPER_REMOTE if self.config.use_remote_whisper else TranscriptSource.WHISPER_LOCAL,
+                    source=source,
                     quality_score=quality_score,
                     metadata={
                         'audio_file': local_audio_path,
                         'transcript_file': transcript_path,
-                        'model': self.config.whisper_model
+                        'model': 'whisper-1' if self.config.use_openai_whisper else self.config.whisper_model
                     }
                 )
             
-            raise Exception("Transcription failed - no output file")
+            raise Exception("Transcription failed - no output")
             
         except Exception as e:
             logger.error(f"Error transcribing with Whisper: {e}")

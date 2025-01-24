@@ -15,7 +15,7 @@ class EpisodeDownloader:
         self.verbose = verbose
 
     def download_single_episode(self, url, title, feed_title):
-        """Download a single episode.
+        """Download a single episode with streaming and progress tracking.
 
         Args:
             url (str): The URL of the episode's MP3 file.
@@ -29,20 +29,69 @@ class EpisodeDownloader:
         """
         # TODO;
         # resolve the issue of the episode title being not path friendly
+        self.logger.debug(f"Starting download from: {url}")
+        self.logger.debug(f"Episode title: {title}")
         episode_dir = self._create_episode_dir(feed_title)
-        response = requests.get(url)
-        safe_title = "".join([c for c in feed_title if c.isalnum() or c in " -_"]).rstrip()
+        self.logger.debug(f"Episode dir: {episode_dir}")
+        
+        # Create safe filename
+        safe_title = "".join([c for c in title if c.isalnum() or c in " -_"]).rstrip()[:100]
         safe_title = safe_title.replace(",", "").replace("/", "")
         file_path = os.path.join(episode_dir, f"{safe_title}.mp3")
-        if response.ok:
-            with open(file_path, 'wb') as file:
-                file.write(response.content)
-                if self.verbose:
-                    self.logger.info(f"Downloaded episode: {title}")
+        
+        # Check if file already exists
+        if os.path.exists(file_path):
+            self.logger.info(f"Episode already downloaded: {file_path}")
             return file_path
-        else:
-            if self.verbose:
-                self.logger.error(f"Failed to download episode: {title}")
+        
+        try:
+            self.logger.info(f"Downloading episode: {title}")
+            # Stream the download with timeout for initial connection
+            response = requests.get(url, stream=True, timeout=30)
+            response.raise_for_status()
+            
+            # Get file size if available
+            total_size = int(response.headers.get('content-length', 0))
+            if total_size > 0:
+                self.logger.info(f"File size: {total_size / 1024 / 1024:.1f} MB")
+            
+            # Download in chunks
+            chunk_size = 8192  # 8KB chunks
+            downloaded = 0
+            last_log = 0
+            
+            with open(file_path, 'wb') as file:
+                for chunk in response.iter_content(chunk_size=chunk_size):
+                    if chunk:
+                        file.write(chunk)
+                        downloaded += len(chunk)
+                        
+                        # Log progress every 5MB
+                        if total_size > 0 and downloaded - last_log > 5 * 1024 * 1024:
+                            progress = (downloaded / total_size) * 100
+                            self.logger.info(f"Download progress: {progress:.1f}% ({downloaded / 1024 / 1024:.1f} MB / {total_size / 1024 / 1024:.1f} MB)")
+                            last_log = downloaded
+            
+            self.logger.info(f"Successfully downloaded episode: {title}")
+            return file_path
+            
+        except requests.exceptions.Timeout:
+            self.logger.error(f"Download timeout for episode: {title}")
+            # Clean up partial file
+            if os.path.exists(file_path):
+                os.remove(file_path)
+            return None
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"Failed to download episode: {title}. Error: {e}")
+            # Clean up partial file
+            if os.path.exists(file_path):
+                os.remove(file_path)
+            return None
+        except Exception as e:
+            self.logger.error(f"Unexpected error downloading episode: {title}. Error: {e}")
+            # Clean up partial file
+            if os.path.exists(file_path):
+                os.remove(file_path)
             return None
 
     def _create_episode_dir(self, feed_title):

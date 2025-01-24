@@ -4,6 +4,9 @@ from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 from transformers.utils import is_flash_attn_2_available
 import os
 import time
+import logging
+
+logger = logging.getLogger(__name__)
 # from pydub import AudioSegment  # Commented out for Python 3.13 compatibility
 # from lightning_sdk import Studio  # Only needed when running on Lightning.ai
 
@@ -72,36 +75,55 @@ class EpisodeTranscriber:
 
         :param model_id: The model ID for the transcription model.
         """
-        if is_flash_attn_2_available() and torch.cuda.is_available():
-            print("Using Flash Attention 2 and GPU")
-            device = "cuda:0"
-            torch_dtype = torch.float16
-        else:
-            print("Using CPU execution")
-            torch_dtype = torch.float32
-            device = "cpu"
+        try:
+            if is_flash_attn_2_available() and torch.cuda.is_available():
+                logger.info("Using Flash Attention 2 and GPU")
+                device = "cuda:0"
+                torch_dtype = torch.float16
+                attn_implementation = "flash_attention_2"
+            else:
+                logger.info("Using CPU execution")
+                torch_dtype = torch.float32
+                device = "cpu"
+                attn_implementation = None  # Don't use flash attention on CPU
 
-        self.device = device
-        self.torch_dtype = torch_dtype
+            self.device = device
+            self.torch_dtype = torch_dtype
 
-        self.model = AutoModelForSpeechSeq2Seq.from_pretrained(
-            model_id, torch_dtype=self.torch_dtype, low_cpu_mem_usage=True, use_safetensors=True,
-            attn_implementation="flash_attention_2"
-        ).to(self.device)
+            logger.info(f"Loading Whisper model: {model_id}")
+            
+            # Create model kwargs based on device
+            model_kwargs = {
+                "torch_dtype": self.torch_dtype,
+                "low_cpu_mem_usage": True,
+                "use_safetensors": True,
+            }
+            
+            # Only add attn_implementation if we're using GPU
+            if attn_implementation:
+                model_kwargs["attn_implementation"] = attn_implementation
+            
+            self.model = AutoModelForSpeechSeq2Seq.from_pretrained(
+                model_id, **model_kwargs
+            ).to(self.device)
 
-        self.processor = AutoProcessor.from_pretrained(model_id)
+            self.processor = AutoProcessor.from_pretrained(model_id)
 
-        self.pipe = pipeline(
-            "automatic-speech-recognition",
-            model=self.model,
-            tokenizer=self.processor.tokenizer,
-            feature_extractor=self.processor.feature_extractor,
-            max_new_tokens=128,
-            chunk_length_s=25,
-            batch_size=16,
-            torch_dtype=self.torch_dtype,
-            device=self.device,
-        )
+            self.pipe = pipeline(
+                "automatic-speech-recognition",
+                model=self.model,
+                tokenizer=self.processor.tokenizer,
+                feature_extractor=self.processor.feature_extractor,
+                max_new_tokens=128,
+                chunk_length_s=25,
+                batch_size=16 if device == "cuda:0" else 4,  # Smaller batch for CPU
+                torch_dtype=self.torch_dtype,
+                device=self.device,
+            )
+            logger.info("Whisper model loaded successfully")
+        except Exception as e:
+            logger.error(f"Error setting up Whisper model: {e}")
+            raise
 
     def transcribe(self, mp3_file):
         """
@@ -110,15 +132,26 @@ class EpisodeTranscriber:
         :param mp3_file: Path to the MP3 file to transcribe.
         :returns: Path to the transcription text file.
         """
-        # audio = AudioSegment.from_mp3(mp3_file)  # Commented out for Python 3.13 compatibility
-        # For now, just use a placeholder duration
-        # audio_length = len(audio) / 60000  # Convert milliseconds to minutes
-        audio_length = 60  # Placeholder: assume 60 minutes for now
-        start_time = time.time()
-        outputs = self.pipe(mp3_file)
-        transcription_time = time.time() - start_time
-        print(f"{audio_length} mins of audio transcribed in {transcription_time:.2f} seconds.")
-        return self.save(outputs, mp3_file)
+        try:
+            if not os.path.exists(mp3_file):
+                logger.error(f"Audio file not found: {mp3_file}")
+                return None
+                
+            logger.info(f"Starting transcription of: {mp3_file}")
+            # audio = AudioSegment.from_mp3(mp3_file)  # Commented out for Python 3.13 compatibility
+            # For now, just use a placeholder duration
+            # audio_length = len(audio) / 60000  # Convert milliseconds to minutes
+            audio_length = 60  # Placeholder: assume 60 minutes for now
+            
+            start_time = time.time()
+            outputs = self.pipe(mp3_file)
+            transcription_time = time.time() - start_time
+            
+            logger.info(f"{audio_length} mins of audio transcribed in {transcription_time:.2f} seconds.")
+            return self.save(outputs, mp3_file)
+        except Exception as e:
+            logger.error(f"Error during transcription: {e}")
+            return None
 
     def save(self, outputs, mp3_file):
         """

@@ -60,6 +60,8 @@ class YouTubePodcastDetector:
             'The Diary Of A CEO': 'steven bartlett',
             'All-In Podcast': 'all in podcast',
             'My First Million': 'my first million',
+            "Lenny's Podcast": "Lenny's Podcast",
+            "Lennybot": "Lenny's Podcast",
         }
         self.formatter = TextFormatter()
     
@@ -73,6 +75,10 @@ class YouTubePodcastDetector:
         Returns:
             Video ID if found, None otherwise
         """
+        # First check if this is a YouTube URL
+        if not any(domain in url.lower() for domain in ['youtube.com', 'youtu.be', 'youtube-nocookie.com']):
+            return None
+            
         patterns = [
             r'(?:v=|\/)([0-9A-Za-z_-]{11}).*',
             r'(?:embed\/)([0-9A-Za-z_-]{11})',
@@ -83,7 +89,10 @@ class YouTubePodcastDetector:
         for pattern in patterns:
             match = re.search(pattern, url)
             if match:
-                return match.group(1)
+                # Extract just the 11-character video ID
+                video_id = match.group(1)
+                if len(video_id) == 11:
+                    return video_id
         return None
     
     def search_youtube_for_episode(
@@ -92,10 +101,7 @@ class YouTubePodcastDetector:
         episode_title: str
     ) -> Optional[str]:
         """
-        Search YouTube for a specific podcast episode.
-        
-        Note: This is a simplified implementation. In production,
-        you would use the YouTube Data API for actual search.
+        Search YouTube for a specific podcast episode using yt-dlp.
         
         Args:
             podcast_name: Name of the podcast
@@ -104,10 +110,66 @@ class YouTubePodcastDetector:
         Returns:
             YouTube video URL if found, None otherwise
         """
-        # This would require YouTube API implementation
-        # For now, returning None
+        import yt_dlp
+        
         logger.info(f"Searching YouTube for: {podcast_name} - {episode_title}")
-        return None
+        
+        # Build search query
+        search_query = f"{podcast_name} {episode_title}"
+        
+        # For known podcasts, add channel info to improve search
+        if "lenny" in podcast_name.lower():
+            search_query = f"Lenny's Podcast {episode_title}"
+        elif podcast_name in self.youtube_channels:
+            search_query = f"{self.youtube_channels[podcast_name]} {episode_title}"
+        
+        # Configure yt-dlp for search only (no download)
+        ydl_opts = {
+            'quiet': True,
+            'no_warnings': True,
+            'extract_flat': True,
+            'force_generic_extractor': False,
+            'default_search': 'ytsearch',
+            'max_downloads': 1,
+            'logger': logger,
+        }
+        
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                # Search for videos (limit to 5 results)
+                search_results = ydl.extract_info(f"ytsearch5:{search_query}", download=False)
+                
+                if search_results and 'entries' in search_results:
+                    # Look for best match in results
+                    for entry in search_results['entries']:
+                        if entry is None:
+                            continue
+                            
+                        video_title = entry.get('title', '').lower()
+                        video_url = f"https://www.youtube.com/watch?v={entry.get('id')}"
+                        
+                        # Check if video title contains key parts of episode title
+                        episode_words = episode_title.lower().split()[:5]  # Check first 5 words
+                        match_count = sum(1 for word in episode_words if len(word) > 3 and word in video_title)
+                        
+                        # If we have a good match, return the URL
+                        if match_count >= 2 or episode_title.lower()[:30] in video_title:
+                            logger.info(f"Found YouTube video: {entry.get('title')} - {video_url}")
+                            return video_url
+                    
+                    # If no good match, return the first result as a fallback for known podcasts
+                    if "lenny" in podcast_name.lower() and search_results['entries'][0]:
+                        first_result = search_results['entries'][0]
+                        video_url = f"https://www.youtube.com/watch?v={first_result.get('id')}"
+                        logger.info(f"Using first search result: {first_result.get('title')} - {video_url}")
+                        return video_url
+                
+                logger.info(f"No suitable YouTube video found for: {search_query}")
+                return None
+                
+        except Exception as e:
+            logger.error(f"Error searching YouTube: {e}")
+            return None
     
     def fetch_youtube_transcript(
         self,

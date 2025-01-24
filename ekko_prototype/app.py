@@ -5,6 +5,17 @@ import sys
 import glob
 import time
 import readtime
+import logging
+
+# Set up logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+# Disable watchdog debug logging
+logging.getLogger('watchdog').setLevel(logging.WARNING)
+logging.getLogger('watchdog.observers.inotify_buffer').setLevel(logging.WARNING)
+logger = logging.getLogger(__name__)
 
 ekko_icon = glob.glob('./**/ekko.png', recursive=True)[0]
 st.set_page_config(page_title='ekko v0.1', page_icon=ekko_icon)
@@ -155,16 +166,18 @@ def display_episodes(episodes, num_episodes, feed_title, feed_url=None):
                         print(f'unknowns time string format, {episode.duration}')
 
                     # Use intelligent transcript fetching
-                    with st.spinner('Fetching transcript (checking YouTube first, then Whisper)...'):
-                        
-                        # Initialize the unified transcript fetcher
-                        transcript_config = TranscriptConfig(
-                            prefer_youtube=True,
-                            use_remote_whisper=False,  # Use local Whisper for now
-                            cache_transcripts=True
-                        )
-                        fetcher = UnifiedTranscriptFetcher(transcript_config)
-                        
+                    st.info('Fetching transcript (checking YouTube first, then Whisper)...')
+                    
+                    # Initialize the unified transcript fetcher
+                    transcript_config = TranscriptConfig(
+                        prefer_youtube=True,
+                        use_remote_whisper=False,  # Use local Whisper for now
+                        cache_transcripts=True
+                    )
+                    fetcher = UnifiedTranscriptFetcher(transcript_config)
+                    
+                    try:
+                        logger.info(f"Starting transcript fetch for: {episode_title}")
                         # Get the transcript
                         result = fetcher.get_transcript(
                             podcast_name=feed_title,
@@ -175,19 +188,29 @@ def display_episodes(episodes, num_episodes, feed_title, feed_url=None):
                         
                         if not result or not result.text:
                             st.error("Failed to fetch transcript. Please try again.")
-                            return
-                        
-                        # Save transcript to a temporary file
-                        import tempfile
-                        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, 
-                                                        dir='./transcripts' if os.path.exists('./transcripts') else None) as f:
-                            f.write(result.text)
-                            transcription_file_path = f.name
-                        
-                        # Show source of transcript
-                        st.success(f"Transcript obtained from: {result.source.value}")
-                        if result.metadata.get('youtube_url'):
-                            st.info(f"YouTube URL: {result.metadata['youtube_url']}")
+                            logger.error(f"Transcript fetch failed - result: {result}")
+                            if result:
+                                logger.error(f"Source: {result.source}, metadata: {result.metadata}")
+                            continue  # Skip to next episode
+                    except Exception as e:
+                        st.error(f"Error fetching transcript: {str(e)}")
+                        logger.exception("Error during transcript fetching")
+                        import traceback
+                        st.code(traceback.format_exc())
+                        continue  # Skip to next episode
+                    
+                    # Save transcript to a temporary file
+                    import tempfile
+                    os.makedirs('./transcripts', exist_ok=True)
+                    with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, 
+                                                    dir='./transcripts') as f:
+                        f.write(result.text)
+                        transcription_file_path = f.name
+                    
+                    # Show source of transcript
+                    st.success(f"Transcript obtained from: {result.source.value}")
+                    if result.metadata.get('youtube_url'):
+                        st.info(f"YouTube URL: {result.metadata['youtube_url']}")
                     
                     # summarize
                     with st.spinner('Summarizing episode...'):

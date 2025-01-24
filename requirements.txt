@@ -14,3 +14,5 @@ langchain-openai
 chromadb
 tiktoken
 readtime
+youtube-transcript-api
+yt-dlp
