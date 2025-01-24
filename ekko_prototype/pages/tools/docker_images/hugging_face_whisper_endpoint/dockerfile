@@ -1,0 +1,14 @@
+# Use the Hugging Face Transformers image with PyTorch and GPU support
+FROM huggingface/transformers-pytorch-gpu
+
+# Install the additional Python packages
+RUN pip install --upgrade transformers accelerate datasets[audio] && \
+    pip install flash-attn --no-build-isolation && \
+    pip install pydub
+
+# Set the working directory (optional)
+WORKDIR /app
+
+# You can specify a command to run when the container starts, or leave it to interactive mode
+# For example, to start a bash shell:
+# CMD ["bash"]

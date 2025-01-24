@@ -106,3 +106,4 @@ summary = summarizer.summarize_transcript("transcript text here")
 - always spell ekko 'ekko', all lowercase
 - use proper gitflow; create & checkout branches, make commits to them, push & merge
 - dont forget to backdate the commits
+- always use uv to run python scripts, including streamlit  & manage the python env & the dependencies

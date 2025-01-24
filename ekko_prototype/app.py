@@ -9,18 +9,13 @@ import readtime
 ekko_icon = glob.glob('./**/ekko.png', recursive=True)[0]
 st.set_page_config(page_title='ekko v0.1', page_icon=ekko_icon)
 
-# absolutely no idea why, but when the page gets switched from
-# feedback to app, the whole path of the interpreter resets
-# this allows it to see the modules it needs from the tools
-joined_path = os.getcwd() + '/ekko/ekko_prototype/pages'
-sys.path.append(joined_path)
-
-from tools.podcast_finder import PodcastIndexSearch
-from tools.feed_parser import FeedParser
-from tools.summary_creator import TranscriptSummarizer
-from tools.podcast_chatbot import ChatBotInterface
-# from tools.audio_transcriber import calculate_ratio, estimate_processing_time
-from tools.retry import retry
+# Fix import paths for tools module
+from ekko_prototype.pages.tools.podcast_finder import PodcastIndexSearch
+from ekko_prototype.pages.tools.feed_parser import FeedParser
+from ekko_prototype.pages.tools.summary_creator import TranscriptSummarizer
+from ekko_prototype.pages.tools.podcast_chatbot import ChatBotInterface
+# from ekko_prototype.pages.tools.audio_transcriber import calculate_ratio, estimate_processing_time
+from ekko_prototype.pages.tools.retry import retry
 
 # TODO:
 # improve token security handling
@@ -151,57 +146,52 @@ def display_episodes(episodes, num_episodes, feed_title):
                         print(e)
                         print(f'unknowns time string format, {episode.duration}')
 
-                    if h >= 1 and m >= 30:
-                        st.warning("This preview build handles only episodes shorter than 1.5 hours, please try another episode.")
-                        
-                    else:
+                    # # The server-based download/transcribe flow
+                    # TODO:
+                    # provide a status update estimated based on the length of the episode
+                    with st.spinner('Transcribing episode...'):
+                        # st.write(f'Estimated processing time: {estimate_processing_time(h, m, s, ratio)}')
+                        st.write('Estimated processing time: ~1 minute')
 
-                        # # The server-based download/transcribe flow
-                        # TODO:
-                        # provide a status update estimated based on the length of the episode
-                        with st.spinner('Transcribing episode...'):
-                            # st.write(f'Estimated processing time: {estimate_processing_time(h, m, s, ratio)}')
-                            st.write('Estimated processing time: ~1 minute')
+                        # transcription_file_path = transcribe_episode_request(episode, feed_title)
+                        transcription_file_path = simulate_transcription()
+                        if not transcription_file_path:
+                            st.error("Failed to transcribe episode.")
+                            return
 
-                            # transcription_file_path = transcribe_episode_request(episode, feed_title)
-                            transcription_file_path = simulate_transcription()
-                            if not transcription_file_path:
-                                st.error("Failed to transcribe episode.")
-                                return
+                        file_basename = os.path.basename(transcription_file_path)
 
-                            file_basename = os.path.basename(transcription_file_path)
-
-                            with st.spinner('Uploading the transcript...'):
-                                try:
-                                    transcription_file_path = find_file(file_basename)[0]
-                                except Exception as e:
-                                    st.error("Upload failed; please try clicking the 'Summarize episode' button again.")
-                            
-                            file_transcribed = os.path.exists(transcription_file_path)
-                            if file_transcribed:
-                                st.success(f"Transcription completed!")
-                            else:
-                                st.error(f"Transcription file not found at {transcription_file_path}; please try clicking the 'Summarize episode' again")
-                                return
-                        
-                        # summarize
-                        with st.spinner('Summarizing episode...'):
+                        with st.spinner('Uploading the transcript...'):
                             try:
-                                summarize_episode(transcription_file_path)  
+                                transcription_file_path = find_file(file_basename)[0]
                             except Exception as e:
-                                st.write(f'Summarization failed; {e}')
+                                st.error("Upload failed; please try clicking the 'Summarize episode' button again.")
                         
-                        # chat
+                        file_transcribed = os.path.exists(transcription_file_path)
+                        if file_transcribed:
+                            st.success(f"Transcription completed!")
+                        else:
+                            st.error(f"Transcription file not found at {transcription_file_path}; please try clicking the 'Summarize episode' again")
+                            return
+                    
+                    # summarize
+                    with st.spinner('Summarizing episode...'):
                         try:
-                            chat_with_podcast(transcription_file_path, episode_title=episode_title)
+                            summarize_episode(transcription_file_path)  
                         except Exception as e:
-                            st.error(f"Failed to load chatbot: {e}")
+                            st.write(f'Summarization failed; {e}')
+                    
+                    # chat
+                    try:
+                        chat_with_podcast(transcription_file_path, episode_title=episode_title)
+                    except Exception as e:
+                        st.error(f"Failed to load chatbot: {e}")
 
-                        # provide feedback
-                        st.session_state['feedback_round'] = 'prototype_evaluation'
-                        st.session_state['question_counter'] = 0
-                        # st.page_link('./pages/feedback_record.py', label="Click to provide feedback 🥰")
-                        st.link_button('Click to provide feedback 🥰', 'https://forms.gle/CQeBVQj8B52RpF1P8')
+                    # provide feedback
+                    st.session_state['feedback_round'] = 'prototype_evaluation'
+                    st.session_state['question_counter'] = 0
+                    # st.page_link('./pages/feedback_record.py', label="Click to provide feedback 🥰")
+                    st.link_button('Click to provide feedback 🥰', 'https://forms.gle/CQeBVQj8B52RpF1P8')
 
             # TODO:
             # see how to handle the duplicate episodes better
@@ -215,7 +205,10 @@ def search_podcast():
             
     if podcast_name:
 
-        search = PodcastIndexSearch('./ekko/ekko_prototype/creds/api_credentials.json')
+        # Use absolute path or relative from current file location
+        import os
+        creds_path = os.path.join(os.path.dirname(__file__), 'creds', 'api_credentials.json')
+        search = PodcastIndexSearch(creds_path)
         results = search.search_podcasts(podcast_name)
         
         if results and 'podcasts' in results and len(results['podcasts']) > 0:
