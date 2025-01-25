@@ -14,7 +14,9 @@ from langchain_community.vectorstores import Chroma
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 
 # Add parent directory to path for imports
-parent_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+parent_dir = os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
 
@@ -22,8 +24,12 @@ from config import config
 
 
 class ChatBotInterface:
-    def __init__(self, transcript_path: str, model: str = 'gpt-4o', 
-                 credentials_path: str | None = None):
+    def __init__(
+        self,
+        transcript_path: str,
+        model: str = "gpt-4o",
+        credentials_path: str | None = None,
+    ):
         """
         Initializes the chat bot interface with necessary paths and model.
 
@@ -37,9 +43,11 @@ class ChatBotInterface:
         self.transcript_path = transcript_path
         self.credentials_path = credentials_path
         self.api_key = self.load_api_key()
-        self.model = ChatOpenAI(model_name=model, temperature=0, 
-                                openai_api_key=self.api_key,
-                                )
+        self.model = ChatOpenAI(
+            model_name=model,
+            temperature=0,
+            openai_api_key=self.api_key,
+        )
         self.vectordb = self.setup_vector_db()
         self.qa_chain = self.setup_qa_chain()
 
@@ -53,15 +61,15 @@ class ChatBotInterface:
         # Try environment variable first
         if config.OPENAI_API_KEY:
             return config.OPENAI_API_KEY
-            
+
         # Fallback to JSON file
         if self.credentials_path and os.path.exists(self.credentials_path):
             with open(self.credentials_path) as file:
                 credentials = json.load(file)
-                return credentials.get('api_key', '')
-        
+                return credentials.get("api_key", "")
+
         return ""
-        
+
     def load_and_split_transcript(self) -> list[Any]:
         """
         Loads and splits the transcript into manageable chunks.
@@ -70,7 +78,9 @@ class ChatBotInterface:
         :rtype: List[Any]
         """
         transcript = TextLoader(self.transcript_path).load()
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1500, chunk_overlap=150)
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=1500, chunk_overlap=150
+        )
         return text_splitter.split_documents(transcript)
 
     # TODO:
@@ -82,7 +92,7 @@ class ChatBotInterface:
         :return: An instance of Chroma vector database
         :rtype: Chroma
         """
-        persist_directory = './chroma/'
+        persist_directory = "./chroma/"
 
         # Only create vector DB if it does not already exist
         if not os.path.exists(persist_directory):
@@ -90,8 +100,12 @@ class ChatBotInterface:
 
         documents = self.load_and_split_transcript()
         embeddings = OpenAIEmbeddings(openai_api_key=self.api_key)
-        vectordb = Chroma.from_documents(documents=documents, embedding=embeddings, persist_directory=persist_directory)
-        
+        vectordb = Chroma.from_documents(
+            documents=documents,
+            embedding=embeddings,
+            persist_directory=persist_directory,
+        )
+
         return vectordb
 
     def setup_qa_chain(self) -> RetrievalQA:
@@ -111,24 +125,23 @@ class ChatBotInterface:
             self.model,
             retriever=self.vectordb.as_retriever(),
             return_source_documents=False,
-            chain_type_kwargs={"prompt": qa_chain_prompt}
+            chain_type_kwargs={"prompt": qa_chain_prompt},
         )
-    
+
     def reply_generator(self, query: str) -> Generator[str]:
         """
         Generates a reply to the user query using the QA chain.
 
         :param query: The user query
         :type query: str
-        
+
         :yields: Words of the reply
         :rtype: Generator[str, None, None]
         """
-        reply = self.qa_chain({"query": query})['result']
+        reply = self.qa_chain({"query": query})["result"]
 
         for word in reply.split():
-            
-            yield word + ' '
+            yield word + " "
             time.sleep(0.01)
 
     # TODO:
@@ -138,19 +151,19 @@ class ChatBotInterface:
     def chat(self, episode_title: str) -> None:
         """
         Runs the chat interface using Streamlit.
-        
+
         :param episode_title: Title of the episode
         :type episode_title: str
         """
-        episode_title_friendly = '_'.join(episode_title.split())
-        messages_key = f'messages_{episode_title_friendly}'
+        episode_title_friendly = "_".join(episode_title.split())
+        messages_key = f"messages_{episode_title_friendly}"
         if messages_key not in st.session_state:
             st.session_state[messages_key] = []
 
         # Display each message in the chat interface
         for message in st.session_state[messages_key]:
-            with st.chat_message(message['role']):
-                st.markdown(message['content'])
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
 
         # Get user input
         if prompt := st.chat_input("Chat with the episode:"):
@@ -158,11 +171,13 @@ class ChatBotInterface:
             with st.chat_message("user"):
                 st.markdown(prompt)
 
-            with st.chat_message("assistant"):    
-            
+            with st.chat_message("assistant"):
                 reply = st.write_stream(self.reply_generator(prompt))
 
-            st.session_state[messages_key].append({"role": "assistant", "content": reply})
+            st.session_state[messages_key].append(
+                {"role": "assistant", "content": reply}
+            )
+
 
 # if __name__ == "__main__":
 #     credentials_path = '../creds/openai_credentials.json'

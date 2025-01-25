@@ -2,8 +2,9 @@ import glob
 
 import streamlit as st
 
-ekko_icon = glob.glob('./**/ekko.png', recursive=True)[0]
-st.set_page_config(page_title='ekko v0.1', page_icon=ekko_icon)
+ekko_icon = glob.glob("./**/ekko.png", recursive=True)[0]
+st.set_page_config(page_title="ekko v0.1", page_icon=ekko_icon)
+
 
 # TODO:
 # make nicer, add a bit more content
@@ -27,7 +28,7 @@ def welcome():
 
             **Be part of shaping the future of content consumption.** Experience the power of ekko and take the first step towards a more informed, organized digital life.
             """)
-    
+
     st.markdown("""
                 ### But first, let's start with some feedback 🤓!
                 
@@ -38,8 +39,9 @@ def welcome():
                     - If you are using a mobile device, try not letting it go to sleep while you are interacting with the prototype.
                 """)
 
-    st.session_state['feedback_round'] = 'general'
+    st.session_state["feedback_round"] = "general"
     # st.page_link(page="./pages/feedback_record.py", label="Click here to get started 🚀")
+
 
 if __name__ == "__main__":
     welcome()

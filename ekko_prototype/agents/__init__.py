@@ -8,8 +8,4 @@ summarization, and content analysis.
 from .summary_crew import SummaryCrew
 from .transcript_crew import TranscriptCrew, TranscriptOrchestrator
 
-__all__ = [
-    'SummaryCrew',
-    'TranscriptCrew',
-    'TranscriptOrchestrator'
-]
+__all__ = ["SummaryCrew", "TranscriptCrew", "TranscriptOrchestrator"]

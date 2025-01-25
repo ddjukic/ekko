@@ -11,7 +11,10 @@ logger = logging.getLogger(__name__)
 # from pydub import AudioSegment  # Commented out for Python 3.13 compatibility
 # from lightning_sdk import Studio  # Only needed when running on Lightning.ai
 
-def calculate_ratio(audio_lengths_minutes: list[float], processing_times_seconds: list[float]) -> float:
+
+def calculate_ratio(
+    audio_lengths_minutes: list[float], processing_times_seconds: list[float]
+) -> float:
     """
     Calculates the average ratio of processing time to audio length for a list of audio files.
 
@@ -22,19 +25,29 @@ def calculate_ratio(audio_lengths_minutes: list[float], processing_times_seconds
     :return: Average ratio of processing time per second of audio.
     :rtype: float
     """
-    assert len(audio_lengths_minutes) == len(processing_times_seconds), "Lists must be of equal length"
+    assert len(audio_lengths_minutes) == len(processing_times_seconds), (
+        "Lists must be of equal length"
+    )
     total_ratio = 0
-    for audio_length, processing_time in zip(audio_lengths_minutes, processing_times_seconds, strict=False):
+    for audio_length, processing_time in zip(
+        audio_lengths_minutes, processing_times_seconds, strict=False
+    ):
         audio_length_seconds = audio_length * 60  # Convert minutes to seconds
         ratio = processing_time / audio_length_seconds
         total_ratio += ratio
     average_ratio = total_ratio / len(audio_lengths_minutes)
     return average_ratio
 
-def estimate_processing_time(audio_length_hours: int, audio_length_minutes: int, audio_length_seconds: int, ratio: float) -> str:
+
+def estimate_processing_time(
+    audio_length_hours: int,
+    audio_length_minutes: int,
+    audio_length_seconds: int,
+    ratio: float,
+) -> str:
     """
     Estimates the processing time based on the audio length and a given ratio, and returns the time in minutes and seconds if more than 60 seconds.
-    
+
     :param audio_length_hours: Hours of the audio length
     :type audio_length_hours: int
     :param audio_length_minutes: Minutes of the audio length
@@ -46,7 +59,9 @@ def estimate_processing_time(audio_length_hours: int, audio_length_minutes: int,
     :return: Estimated processing time formatted as a string indicating minutes and seconds if more than 60 seconds, otherwise just seconds
     :rtype: str
     """
-    total_audio_seconds = audio_length_hours * 3600 + audio_length_minutes * 60 + audio_length_seconds
+    total_audio_seconds = (
+        audio_length_hours * 3600 + audio_length_minutes * 60 + audio_length_seconds
+    )
     estimated_processing_seconds = total_audio_seconds * ratio
 
     if estimated_processing_seconds <= 60:
@@ -55,11 +70,16 @@ def estimate_processing_time(audio_length_hours: int, audio_length_minutes: int,
         minutes = int(estimated_processing_seconds // 60)
         seconds = estimated_processing_seconds % 60
         return f"{minutes} minutes and {seconds:.2f} seconds"
-    
+
+
 class EpisodeTranscriber:
     """Transcribes podcast episodes from MP3 files."""
 
-    def __init__(self, parent_folder: str = "./transcripts", model_id: str = "distil-whisper/distil-large-v3") -> None:
+    def __init__(
+        self,
+        parent_folder: str = "./transcripts",
+        model_id: str = "distil-whisper/distil-large-v3",
+    ) -> None:
         """
         Initialize the transcriber with the appropriate model and device settings.
 
@@ -95,18 +115,18 @@ class EpisodeTranscriber:
             self.torch_dtype = torch_dtype
 
             logger.info(f"Loading Whisper model: {model_id}")
-            
+
             # Create model kwargs based on device
             model_kwargs = {
                 "torch_dtype": self.torch_dtype,
                 "low_cpu_mem_usage": True,
                 "use_safetensors": True,
             }
-            
+
             # Only add attn_implementation if we're using GPU
             if attn_implementation:
                 model_kwargs["attn_implementation"] = attn_implementation
-            
+
             self.model = AutoModelForSpeechSeq2Seq.from_pretrained(
                 model_id, **model_kwargs
             ).to(self.device)
@@ -142,18 +162,20 @@ class EpisodeTranscriber:
             if not os.path.exists(mp3_file):
                 logger.error(f"Audio file not found: {mp3_file}")
                 return None
-                
+
             logger.info(f"Starting transcription of: {mp3_file}")
             # audio = AudioSegment.from_mp3(mp3_file)  # Commented out for Python 3.13 compatibility
             # For now, just use a placeholder duration
             # audio_length = len(audio) / 60000  # Convert milliseconds to minutes
             audio_length = 60  # Placeholder: assume 60 minutes for now
-            
+
             start_time = time.time()
             outputs = self.pipe(mp3_file)
             transcription_time = time.time() - start_time
-            
-            logger.info(f"{audio_length} mins of audio transcribed in {transcription_time:.2f} seconds.")
+
+            logger.info(
+                f"{audio_length} mins of audio transcribed in {transcription_time:.2f} seconds."
+            )
             return self.save(outputs, mp3_file)
         except Exception as e:
             logger.error(f"Error during transcription: {e}")
@@ -170,10 +192,10 @@ class EpisodeTranscriber:
         :return: Path to the saved text file.
         :rtype: str
         """
-        title = os.path.basename(mp3_file).split('.')[0]
+        title = os.path.basename(mp3_file).split(".")[0]
         output_file = os.path.join(self.parent_folder, f"{title}.txt")
-        with open(output_file, 'w', encoding='utf-8') as file:
-            file.write(outputs['text'])
+        with open(output_file, "w", encoding="utf-8") as file:
+            file.write(outputs["text"])
         return output_file
 
     def upload(self, file_path: str) -> str:
@@ -189,6 +211,6 @@ class EpisodeTranscriber:
         # its a little confusing; but the path for the file on the remote server is somehow
         # automatically made relative to the teamspace, i suppose; thats why the dot works
         remote_path = f"/teamspace/studios/this_studio/ekko/ekko_prototype/transcripts/{os.path.basename(file_path)}"
-        print('Destination:', remote_path)
+        print("Destination:", remote_path)
         # studio.upload_file(file_path=file_path, remote_path=remote_path, progress_bar=True)  # Only needed on Lightning.ai
         return remote_path

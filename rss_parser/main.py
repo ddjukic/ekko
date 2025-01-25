@@ -16,13 +16,22 @@ class FeedParserFactory:
         # For now always returns the default parser (works for test feed)
         return DefaultFeedParserStrategy()
 
+
 # Expanded CLI to accept a CSV file with feed URLs
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Podcast Downloader")
-    parser.add_argument("--feeds_csv", help="Location of the CSV file containing feed URLs")
-    parser.add_argument("--look_back_days", type=int, default=7, help="Number of days to look back for episodes")
+    parser.add_argument(
+        "--feeds_csv", help="Location of the CSV file containing feed URLs"
+    )
+    parser.add_argument(
+        "--look_back_days",
+        type=int,
+        default=7,
+        help="Number of days to look back for episodes",
+    )
     # Other arguments as needed
     return parser.parse_args()
+
 
 # Function to parse the CSV file and return the list of feed URLs
 def parse_csv(csv_file_path):
@@ -38,9 +47,9 @@ def parse_csv(csv_file_path):
         logger.info(f"{title}: {url}")
 
     return feed_titles, feed_urls
-    
-def main():
 
+
+def main():
     logger = logging.getLogger(__name__)
     db_manager = DatabaseConnectionManager()
 
@@ -62,6 +71,7 @@ def main():
 
         downloader = EpisodeDownloader(feed_title, db_manager)
         downloader.download_episodes(episodes, args.look_back_days)
+
 
 if __name__ == "__main__":
     main()

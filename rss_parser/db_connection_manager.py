@@ -14,24 +14,27 @@ from sqlalchemy.orm import relationship, scoped_session, sessionmaker
 
 Base = declarative_base()
 
+
 class Podcast(Base):
-    __tablename__ = 'podcasts'
+    __tablename__ = "podcasts"
     id = Column(Integer, primary_key=True)
     title = Column(String, unique=True, nullable=False)
     episodes = relationship("Episode", back_populates="podcast")
 
+
 class Episode(Base):
-    __tablename__ = 'episodes'
+    __tablename__ = "episodes"
     id = Column(Integer, primary_key=True)
     title = Column(String, nullable=False)
     mp3_url = Column(String, nullable=False)
     publication_date = Column(DateTime, default=datetime.utcnow)
     downloaded = Column(Boolean, default=False)
-    podcast_id = Column(Integer, ForeignKey('podcasts.id'))
+    podcast_id = Column(Integer, ForeignKey("podcasts.id"))
     podcast = relationship("Podcast", back_populates="episodes")
 
+
 class DatabaseConnectionManager:
-    def __init__(self, db_url='sqlite:///podcast_downloads.sqlite'):
+    def __init__(self, db_url="sqlite:///podcast_downloads.sqlite"):
         self.engine = create_engine(db_url, echo=True, future=True)
         Base.metadata.create_all(self.engine)
         self.session_factory = sessionmaker(bind=self.engine)
@@ -43,12 +46,19 @@ class DatabaseConnectionManager:
         if not podcast:
             podcast = Podcast(title=podcast_title)
             session.add(podcast)
-        existing_episode = session.query(Episode).filter_by(mp3_url=episode.mp3_url).first()
+        existing_episode = (
+            session.query(Episode).filter_by(mp3_url=episode.mp3_url).first()
+        )
         if existing_episode:
             print(f"Episode already downloaded: {episode.title}")
         else:
-            new_episode = Episode(title=episode.title, mp3_url=episode.mp3_url,
-                                  publication_date=episode.publication_date, downloaded=True, podcast=podcast)
+            new_episode = Episode(
+                title=episode.title,
+                mp3_url=episode.mp3_url,
+                publication_date=episode.publication_date,
+                downloaded=True,
+                podcast=podcast,
+            )
             session.add(new_episode)
             session.commit()
             print(f"Episode downloaded and added to database: {episode.title}")
