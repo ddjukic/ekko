@@ -235,6 +235,32 @@ class SimpleAuth:
         st.session_state.transcript_count += 1
         self._save_user_data()
 
+    def clear_session_state(self) -> None:
+        """
+        Clear all session state except persistent identifiers.
+        This ensures a clean state on sign out.
+        """
+        # Clear authentication-related state
+        st.session_state.authenticated = False
+        st.session_state.user_email = None
+        st.session_state.transcript_count = 0
+
+        # Clear app-specific state to prevent stale data
+        keys_to_clear = [
+            "selected_podcast",
+            "feedback_round",
+            "question_counter"
+        ]
+
+        # Also clear any message history keys (for chatbot)
+        keys_to_remove = []
+        for key in st.session_state:
+            if key in keys_to_clear or key.endswith("_messages"):
+                keys_to_remove.append(key)
+
+        for key in keys_to_remove:
+            st.session_state.pop(key, None)
+
     def display_usage_info(self) -> None:
         """
         Display usage information in the sidebar.
@@ -259,9 +285,7 @@ class SimpleAuth:
                 )
 
             if st.sidebar.button("Sign Out", use_container_width=True):
-                st.session_state.authenticated = False
-                st.session_state.user_email = None
-                st.session_state.transcript_count = 0
+                self.clear_session_state()
                 st.rerun()
 
     def require_auth(self) -> bool:
