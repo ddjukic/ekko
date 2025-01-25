@@ -66,6 +66,7 @@ temp/
 # Cache
 .cache/
 *.cache
+/transcript_cache
 
 # Coverage reports
 htmlcov/
