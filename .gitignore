@@ -30,6 +30,10 @@ ENV/
 .env.local
 .env.*.local
 
+# Credentials (never commit these!)
+ekko_prototype/creds/
+*credentials.json
+
 # Logs
 *.log
 logs/
