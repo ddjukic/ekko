@@ -246,11 +246,7 @@ class SimpleAuth:
         st.session_state.transcript_count = 0
 
         # Clear app-specific state to prevent stale data
-        keys_to_clear = [
-            "selected_podcast",
-            "feedback_round",
-            "question_counter"
-        ]
+        keys_to_clear = ["selected_podcast", "feedback_round", "question_counter"]
 
         # Also clear any message history keys (for chatbot)
         keys_to_remove = []
