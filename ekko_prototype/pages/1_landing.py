@@ -1,4 +1,5 @@
 import glob
+
 import streamlit as st
 
 ekko_icon = glob.glob('./**/ekko.png', recursive=True)[0]

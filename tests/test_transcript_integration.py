@@ -3,9 +3,16 @@
 Integration test for transcript fetching with OpenAI Whisper.
 """
 
-import sys
-import os
 import logging
+import os
+import sys
+
+# Add project paths
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from ekko_prototype.models import TranscriptConfig
+from ekko_prototype.pages.tools.transcript_fetcher import UnifiedTranscriptFetcher
+from ekko_prototype.pages.tools.youtube_detector import TranscriptSource
 
 # Set up logging
 logging.basicConfig(
@@ -14,11 +21,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Add project paths
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-from ekko_prototype.pages.tools.transcript_fetcher import UnifiedTranscriptFetcher, TranscriptConfig
-from ekko_prototype.pages.tools.youtube_detector import TranscriptSource
 
 def test_transcript_fetching():
     """Test the transcript fetching system."""
@@ -50,7 +52,7 @@ def test_transcript_fetching():
         )
         
         if result and result.text:
-            logger.info(f"✅ Successfully fetched transcript!")
+            logger.info("✅ Successfully fetched transcript!")
             logger.info(f"Source: {result.source.value}")
             logger.info(f"Quality score: {result.quality_score:.2f}")
             logger.info(f"Text length: {len(result.text)} characters")

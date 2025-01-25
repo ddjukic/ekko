@@ -5,13 +5,13 @@ This module provides a lightweight authentication system using email validation
 and session-based rate limiting for transcription actions.
 """
 
-import streamlit as st
-import re
-from datetime import datetime, timedelta
-from typing import Optional, Dict, Any, Tuple
 import hashlib
 import json
+import re
+from datetime import datetime, timedelta
 from pathlib import Path
+
+import streamlit as st
 
 # Email validation regex
 EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
@@ -68,7 +68,7 @@ class SimpleAuth:
         """
         if self.user_data_file.exists():
             try:
-                with open(self.user_data_file, 'r') as f:
+                with open(self.user_data_file) as f:
                     data = json.load(f)
                     
                 # If we have a session that matches, restore it
@@ -96,7 +96,7 @@ class SimpleAuth:
         try:
             # Load existing data
             if self.user_data_file.exists():
-                with open(self.user_data_file, 'r') as f:
+                with open(self.user_data_file) as f:
                     data = json.load(f)
             else:
                 data = {'users': {}, 'sessions': {}}
@@ -182,7 +182,7 @@ class SimpleAuth:
                     # Check if returning user
                     if self.user_data_file.exists():
                         try:
-                            with open(self.user_data_file, 'r') as f:
+                            with open(self.user_data_file) as f:
                                 data = json.load(f)
                                 if email in data.get('users', {}):
                                     st.success(f"Welcome back, {email}! 👋")
@@ -198,7 +198,7 @@ class SimpleAuth:
         
         return False
     
-    def check_rate_limit(self) -> Tuple[bool, int]:
+    def check_rate_limit(self) -> tuple[bool, int]:
         """
         Check if user has exceeded rate limit.
         

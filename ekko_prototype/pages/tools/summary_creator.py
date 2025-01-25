@@ -1,9 +1,10 @@
-import streamlit as st
-from openai import OpenAI
 import json
 import os
 import sys
-from typing import Optional, Generator, List, Dict, Any
+from collections.abc import Generator
+
+import streamlit as st
+from openai import OpenAI
 
 # Add parent directory to path for imports
 parent_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -11,7 +12,7 @@ if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
 
 from config import config
-from models import SummaryRequest, SummaryResult
+
 
 # TODO:
 # - rename the 'system_content' and everything related to something more descriptive,
@@ -31,7 +32,7 @@ class TranscriptSummarizer:
     """
 
     def __init__(self, model: str = "gpt-4o", system_file_path: str = "system.md", 
-                 credentials_file_path: Optional[str] = None):
+                 credentials_file_path: str | None = None):
         """
         Initialize the summarizer with the specified model, system file, and credentials file.
         
@@ -63,7 +64,7 @@ class TranscriptSummarizer:
         :return: Content of the system context file
         :rtype: str
         """
-        with open(file_path, 'r', encoding='utf-8') as file:
+        with open(file_path, encoding='utf-8') as file:
             return file.read()
 
     def _load_api_key_from_file(self, file_path: str) -> str:
@@ -76,11 +77,11 @@ class TranscriptSummarizer:
         :return: The OpenAI API key
         :rtype: str
         """
-        with open(file_path, 'r') as file:
+        with open(file_path) as file:
             credentials = json.load(file)
             return credentials['api_key']
 
-    def summarize_transcript(self, transcript: str) -> Generator[str, None, None]:
+    def summarize_transcript(self, transcript: str) -> Generator[str]:
         """
         Summarize the provided transcript using the OpenAI API.
         

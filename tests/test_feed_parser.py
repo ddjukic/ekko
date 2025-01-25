@@ -2,17 +2,17 @@
 Unit tests for the feed parser module.
 """
 
-import pytest
-from datetime import datetime
-from unittest.mock import patch, MagicMock
-import sys
 import os
+import sys
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from ekko_prototype.pages.tools.feed_parser import FeedParser, DefaultFeedParserStrategy
 from ekko_prototype.models import EpisodeModel
+from ekko_prototype.pages.tools.feed_parser import DefaultFeedParserStrategy, FeedParser
 
 
 class TestFeedParser:

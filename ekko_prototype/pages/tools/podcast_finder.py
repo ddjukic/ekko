@@ -1,10 +1,11 @@
 import hashlib
 import json
-import requests
-import time
-from typing import List, Dict, Any, Optional
 import os
 import sys
+import time
+from typing import Any
+
+import requests
 
 # Add parent directory to path for imports
 parent_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -13,6 +14,7 @@ if parent_dir not in sys.path:
 
 from config import config
 from models import PodcastModel
+
 
 class PodcastIndexSearch:
     """
@@ -25,7 +27,7 @@ class PodcastIndexSearch:
     :ivar base_url: Base URL for the PodcastIndex API
     :vartype base_url: str
     """
-    def __init__(self, api_credentials_path: Optional[str] = None):
+    def __init__(self, api_credentials_path: str | None = None):
         """
         Initialize the PodcastIndexSearch class by loading the API credentials.
         
@@ -35,7 +37,7 @@ class PodcastIndexSearch:
         self.load_api_credentials(api_credentials_path)
         self.base_url = "https://api.podcastindex.org/api/1.0/search/byterm?q="
 
-    def load_api_credentials(self, path: Optional[str] = None) -> Dict[str, str]:
+    def load_api_credentials(self, path: str | None = None) -> dict[str, str]:
         """
         Load the API key and secret from environment variables or JSON file.
         
@@ -55,7 +57,7 @@ class PodcastIndexSearch:
         # Fallback to JSON file if provided
         if path:
             try:
-                with open(path, 'r') as file:
+                with open(path) as file:
                     credentials = json.load(file)
                     self.api_key = credentials.get('api_key', '')
                     self.api_secret = credentials.get('api_secret', '')
@@ -67,7 +69,7 @@ class PodcastIndexSearch:
         
         return {'error': 'No API credentials found'}
 
-    def generate_auth_headers(self) -> Dict[str, str]:
+    def generate_auth_headers(self) -> dict[str, str]:
         """
         Generate the necessary authentication headers for the request.
         
@@ -85,7 +87,7 @@ class PodcastIndexSearch:
             'User-Agent': 'postcasting-index-python-cli',
         }
 
-    def parse_search_results(self, results: Dict[str, Any]) -> List[PodcastModel]:
+    def parse_search_results(self, results: dict[str, Any]) -> list[PodcastModel]:
         """
         Parse the search results to extract relevant podcast information.
         
@@ -116,7 +118,7 @@ class PodcastIndexSearch:
                 continue
         return podcasts
 
-    def search_podcasts(self, search_query: str) -> Dict[str, Any]:
+    def search_podcasts(self, search_query: str) -> dict[str, Any]:
         """
         Search for podcasts matching the search query and return parsed results.
         

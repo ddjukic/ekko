@@ -1,17 +1,17 @@
+import json
 import os
 import sys
 import time
-import json
+from collections.abc import Generator
+from typing import Any
+
 import streamlit as st
-from typing import Optional, List, Dict, Any, Generator
-from langchain_community.document_loaders import TextLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_openai import OpenAIEmbeddings
-from langchain_community.vectorstores import Chroma
 from langchain.chains import RetrievalQA
 from langchain.prompts import PromptTemplate
-from langchain_openai import ChatOpenAI
-from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.document_loaders import TextLoader
+from langchain_community.vectorstores import Chroma
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 
 # Add parent directory to path for imports
 parent_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -19,12 +19,11 @@ if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
 
 from config import config
-from models import ChatSession, ChatMessage
 
 
 class ChatBotInterface:
     def __init__(self, transcript_path: str, model: str = 'gpt-4o', 
-                 credentials_path: Optional[str] = None):
+                 credentials_path: str | None = None):
         """
         Initializes the chat bot interface with necessary paths and model.
 
@@ -57,13 +56,13 @@ class ChatBotInterface:
             
         # Fallback to JSON file
         if self.credentials_path and os.path.exists(self.credentials_path):
-            with open(self.credentials_path, 'r') as file:
+            with open(self.credentials_path) as file:
                 credentials = json.load(file)
                 return credentials.get('api_key', '')
         
         return ""
         
-    def load_and_split_transcript(self) -> List[Any]:
+    def load_and_split_transcript(self) -> list[Any]:
         """
         Loads and splits the transcript into manageable chunks.
 
@@ -115,7 +114,7 @@ class ChatBotInterface:
             chain_type_kwargs={"prompt": qa_chain_prompt}
         )
     
-    def reply_generator(self, query: str) -> Generator[str, None, None]:
+    def reply_generator(self, query: str) -> Generator[str]:
         """
         Generates a reply to the user query using the QA chain.
 

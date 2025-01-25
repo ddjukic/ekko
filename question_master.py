@@ -1,6 +1,8 @@
-import streamlit as st
-import pandas as pd
 from collections import defaultdict
+
+import pandas as pd
+import streamlit as st
+
 
 class QuestionManager:
     """Manages the questions and scoring of the personality test.
@@ -95,6 +97,6 @@ def main(questions):
 
 if __name__ == "__main__":
     import json
-    with open("questions.json", "r") as f:
+    with open("questions.json") as f:
         questions = json.load(f)
     main(questions)

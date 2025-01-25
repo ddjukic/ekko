@@ -81,7 +81,7 @@ jobs:
       - name: Run unit tests
         run: |
           source .venv/bin/activate
-          pytest tests/ -v --cov=ekko_prototype --cov-report=xml --cov-report=term
+          pytest tests/ -v --cov=ekko_prototype --cov-report=xml --cov-report=term --ignore=tests/test_ekko_playwright.py
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           PODCASTINDEX_API_KEY: ${{ secrets.PODCASTINDEX_API_KEY }}

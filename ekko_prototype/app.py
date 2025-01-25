@@ -1,19 +1,12 @@
-import streamlit as st
-import requests
+import glob
 import os
 import sys
-import glob
 import time
+from typing import Any
+
 import readtime
-import logging
-from ekko_prototype.logging_config import setup_streamlit_logging, get_logger
-
-# Set up logging
-setup_streamlit_logging()
-logger = get_logger(__name__)
-
-ekko_icon = glob.glob('./**/ekko.png', recursive=True)[0]
-st.set_page_config(page_title='ekko v0.1', page_icon=ekko_icon)
+import requests
+import streamlit as st
 
 # Fix import paths for tools module
 # Add parent dir to path for imports when running from app.py directly
@@ -21,18 +14,22 @@ parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
 
-# Fix import paths for tools module
-from typing import Optional, List, Tuple, Any
-
-from ekko_prototype.pages.tools.podcast_finder import PodcastIndexSearch
-from ekko_prototype.pages.tools.feed_parser import FeedParser
-from ekko_prototype.pages.tools.summary_creator import TranscriptSummarizer
-from ekko_prototype.pages.tools.podcast_chatbot import ChatBotInterface
-# from ekko_prototype.pages.tools.audio_transcriber import calculate_ratio, estimate_processing_time
-from ekko_prototype.pages.tools.retry import retry
-from ekko_prototype.pages.tools.transcript_fetcher import UnifiedTranscriptFetcher
-from ekko_prototype.models import TranscriptConfig, Episode
 from ekko_prototype.auth import auth
+from ekko_prototype.logging_config import get_logger, setup_streamlit_logging
+from ekko_prototype.models import Episode, TranscriptConfig
+from ekko_prototype.pages.tools.feed_parser import FeedParser
+from ekko_prototype.pages.tools.podcast_chatbot import ChatBotInterface
+from ekko_prototype.pages.tools.podcast_finder import PodcastIndexSearch
+from ekko_prototype.pages.tools.retry import retry
+from ekko_prototype.pages.tools.summary_creator import TranscriptSummarizer
+from ekko_prototype.pages.tools.transcript_fetcher import UnifiedTranscriptFetcher
+
+# Set up logging
+setup_streamlit_logging()
+logger = get_logger(__name__)
+
+ekko_icon = glob.glob('./**/ekko.png', recursive=True)[0]
+st.set_page_config(page_title='ekko v0.1', page_icon=ekko_icon)
 
 # TODO:
 # improve token security handling
@@ -44,14 +41,14 @@ URL = 'https://internally-next-serval.ngrok-free.app'
 # also retry because apparently there is a bit of a 
 # filesystem latency
 @retry(num_retries=10, sleep_between=1.5)
-def find_file(filename: str) -> List[str]:
+def find_file(filename: str) -> list[str]:
     # sleep for a moment to give the file system to refresh
     time.sleep(1)
     return glob.glob(f'./**/{filename}', recursive=True)
 
 # TODO:
 # improve the docstrings; handle the TOKEN properly
-def transcribe_episode_request(episode: Episode, feed_title: str) -> Optional[str]:
+def transcribe_episode_request(episode: Episode, feed_title: str) -> str | None:
     """
     Transcribes an episode and returns the transcription file path.
     
@@ -81,7 +78,7 @@ def transcribe_episode_request(episode: Episode, feed_title: str) -> Optional[st
         return transcription_file_path
     else:
         # Handle request error
-        st.error(f"Failed to transcribe episode; server unreachable.")
+        st.error("Failed to transcribe episode; server unreachable.")
         print(f'response status code: {response.status_code}')
         return None
 
@@ -95,7 +92,7 @@ def summarize_episode(episode_transcript: str) -> None:
     :type episode_transcript: str
     """
     # Read the transcription file
-    with open(episode_transcript, "r") as file:
+    with open(episode_transcript) as file:
         transcription_text = file.read()
 
     # Create the summary
@@ -106,7 +103,7 @@ def summarize_episode(episode_transcript: str) -> None:
     # write the summary stream
     summary = st.write_stream(summarizer.summarize_transcript(transcription_text))
 
-    st.write(f'Estimated reading time: {str(readtime.of_text(summary).text)}')
+    st.write(f'Estimated reading time: {readtime.of_text(summary).text!s}')
     # st.write("Please provide feedback:")
     # Provide feedback on the summary
     # feedback = streamlit_feedback(
@@ -123,7 +120,7 @@ def _re_search() -> None:
     # resets the currently selected podcast
     st.session_state.pop('selected_podcast', None)
 
-def parse_time(time_string: str) -> Tuple[int, int, int]:
+def parse_time(time_string: str) -> tuple[int, int, int]:
     """
     Parses a time string in the format 'HH:MM:SS' and returns the hours, minutes, and seconds.
     
@@ -169,7 +166,7 @@ def chat_with_podcast(episode_transcript: str, episode_title: str) -> None:
 
     chatbot.chat(episode_title)
 
-def display_episodes(episodes: List[Episode], num_episodes: int, feed_title: str, feed_url: Optional[str] = None) -> None:
+def display_episodes(episodes: list[Episode], num_episodes: int, feed_title: str, feed_url: str | None = None) -> None:
     """
     Displays a specified number of episodes as expandable elements with details and a 'Summarize episode' button.
 
@@ -192,7 +189,7 @@ def display_episodes(episodes: List[Episode], num_episodes: int, feed_title: str
 
             button_key = f"summarize_{episode.title}"
             try:
-                if st.button(f"Summarize episode", key=button_key):
+                if st.button("Summarize episode", key=button_key):
                     # Check rate limit before proceeding
                     if not auth.can_transcribe():
                         continue
@@ -232,7 +229,7 @@ def display_episodes(episodes: List[Episode], num_episodes: int, feed_title: str
                                 logger.error(f"Source: {result.source}, metadata: {result.metadata}")
                             continue  # Skip to next episode
                     except Exception as e:
-                        st.error(f"Error fetching transcript: {str(e)}")
+                        st.error(f"Error fetching transcript: {e!s}")
                         logger.exception("Error during transcript fetching")
                         import traceback
                         st.code(traceback.format_exc())
@@ -342,8 +339,6 @@ def main() -> None:
     """
 
     # transcription ratio
-    audio_lengths_minutes = [13.776983333333334, 10.85]
-    processing_times_seconds = [8.37, 6.39]
     
     # TODO:
     # think about where to place this

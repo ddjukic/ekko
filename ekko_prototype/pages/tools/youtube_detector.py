@@ -5,11 +5,11 @@ This module provides functionality to detect if podcast episodes are available
 on YouTube and fetch their transcripts using youtube-transcript-api.
 """
 
-import re
 import logging
 import os
+import re
 import sys
-from typing import Optional, Tuple, List, Dict, Any
+from typing import Any
 
 import feedparser
 
@@ -18,7 +18,7 @@ parent_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__f
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
 
-from models import TranscriptSource, TranscriptResult
+from models import TranscriptResult, TranscriptSource
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ class YouTubePodcastDetector:
     
     def __init__(self) -> None:
         """Initialize the YouTube podcast detector."""
-        self.youtube_channels: Dict[str, str] = {
+        self.youtube_channels: dict[str, str] = {
             # Popular podcast YouTube channels
             'The Joe Rogan Experience': 'joerogan',
             'Lex Fridman Podcast': 'lexfridman',
@@ -49,7 +49,7 @@ class YouTubePodcastDetector:
             "Lennybot": "Lenny's Podcast",
         }
     
-    def extract_video_id(self, url: str) -> Optional[str]:
+    def extract_video_id(self, url: str) -> str | None:
         """
         Extract video ID from various YouTube URL formats.
         
@@ -83,7 +83,7 @@ class YouTubePodcastDetector:
         self,
         podcast_name: str,
         episode_title: str
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Search YouTube for a specific podcast episode using yt-dlp.
         
@@ -159,7 +159,7 @@ class YouTubePodcastDetector:
     def fetch_youtube_transcript(
         self,
         video_url: str,
-        languages: List[str] = None
+        languages: list[str] | None = None
     ) -> TranscriptResult:
         """
         Fetch transcript from YouTube video using yt-dlp.
@@ -172,9 +172,10 @@ class YouTubePodcastDetector:
         :return: TranscriptResult with transcript and metadata
         :rtype: TranscriptResult
         """
-        import yt_dlp
-        import tempfile
         import os
+        import tempfile
+
+        import yt_dlp
         
         if languages is None:
             languages = ['en']
@@ -278,7 +279,7 @@ class YouTubePodcastDetector:
                 metadata={'error': str(e)}
             )
     
-    def _parse_vtt_file(self, vtt_file_path: str) -> Optional[str]:
+    def _parse_vtt_file(self, vtt_file_path: str) -> str | None:
         """
         Parse a VTT subtitle file and extract the text.
         
@@ -289,7 +290,7 @@ class YouTubePodcastDetector:
         :rtype: Optional[str]
         """
         try:
-            with open(vtt_file_path, 'r', encoding='utf-8') as f:
+            with open(vtt_file_path, encoding='utf-8') as f:
                 lines = f.readlines()
             
             # Skip WEBVTT header and extract only text lines
@@ -317,7 +318,7 @@ class YouTubePodcastDetector:
     def fetch_transcript_with_timestamps(
         self,
         video_url: str
-    ) -> Optional[List[Dict[str, Any]]]:
+    ) -> list[dict[str, Any]] | None:
         """
         Fetch transcript with timestamps for each segment.
         
@@ -338,7 +339,7 @@ class YouTubePodcastDetector:
         self,
         podcast_rss_url: str,
         episode_title: str
-    ) -> Tuple[bool, Optional[str]]:
+    ) -> tuple[bool, str | None]:
         """
         Check if a podcast episode is available on YouTube.
         

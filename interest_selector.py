@@ -1,6 +1,7 @@
+import json
+
 import streamlit as st
 from streamlit_pills import pills
-import json
 
 # Example usage
 if __name__ == "__main__":

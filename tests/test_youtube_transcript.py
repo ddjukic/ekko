@@ -2,18 +2,17 @@
 Unit tests for YouTube transcript detection and fetching.
 """
 
-import unittest
-from unittest.mock import Mock, patch, MagicMock
-import sys
 import os
+import sys
+import unittest
+from unittest.mock import MagicMock, Mock, patch
 
 # Add the parent directory to the path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from ekko_prototype.pages.tools.youtube_detector import (
-    YouTubePodcastDetector,
     TranscriptSource,
-    TranscriptResult
+    YouTubePodcastDetector,
 )
 
 

@@ -1,10 +1,12 @@
-import requests
 import argparse
 import logging
+
 import pandas as pd
-from feed_parser import DefaultFeedParserStrategy
-from episode_downloader import EpisodeDownloader
+import requests
 from db_connection_manager import DatabaseConnectionManager
+from episode_downloader import EpisodeDownloader
+from feed_parser import DefaultFeedParserStrategy
+
 
 # TODO: maybe move elsewhere
 class FeedParserFactory:
@@ -32,7 +34,7 @@ def parse_csv(csv_file_path):
     feed_titles = df.Title.tolist()
 
     logger.info(f"Found {len(feed_urls)} feed URLs:")
-    for title, url in zip(feed_titles, feed_urls):
+    for title, url in zip(feed_titles, feed_urls, strict=False):
         logger.info(f"{title}: {url}")
 
     return feed_titles, feed_urls
@@ -50,7 +52,7 @@ def main():
     feed_titles = feed_titles[1:]
     feed_urls = feed_urls[1:]
 
-    for feed_title, feed_url in zip(feed_titles, feed_urls):
+    for feed_title, feed_url in zip(feed_titles, feed_urls, strict=False):
         logger.info(f"Processing feed: {feed_url}")
         response = requests.get(feed_url)
         feed_content = response.content

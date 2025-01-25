@@ -1,6 +1,7 @@
 import time
+from collections.abc import Callable
 from functools import wraps
-from typing import Callable, Any, TypeVar, cast
+from typing import Any, TypeVar, cast
 
 F = TypeVar('F', bound=Callable[..., Any])
 
@@ -23,7 +24,7 @@ def retry(num_retries: int = 3, sleep_between: float = 1) -> Callable[[F], F]:
             while attempts < num_retries:
                 try:
                     return func(*args, **kwargs)
-                except Exception as e:
+                except Exception:
                     attempts += 1
                     if attempts == num_retries:
                         raise

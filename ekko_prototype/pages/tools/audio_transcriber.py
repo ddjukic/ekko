@@ -1,17 +1,17 @@
-import argparse
+import logging
+import os
+import time
+from typing import Any
+
 import torch
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 from transformers.utils import is_flash_attn_2_available
-import os
-import time
-import logging
-from typing import List, Optional, Dict, Any
 
 logger = logging.getLogger(__name__)
 # from pydub import AudioSegment  # Commented out for Python 3.13 compatibility
 # from lightning_sdk import Studio  # Only needed when running on Lightning.ai
 
-def calculate_ratio(audio_lengths_minutes: List[float], processing_times_seconds: List[float]) -> float:
+def calculate_ratio(audio_lengths_minutes: list[float], processing_times_seconds: list[float]) -> float:
     """
     Calculates the average ratio of processing time to audio length for a list of audio files.
 
@@ -24,7 +24,7 @@ def calculate_ratio(audio_lengths_minutes: List[float], processing_times_seconds
     """
     assert len(audio_lengths_minutes) == len(processing_times_seconds), "Lists must be of equal length"
     total_ratio = 0
-    for audio_length, processing_time in zip(audio_lengths_minutes, processing_times_seconds):
+    for audio_length, processing_time in zip(audio_lengths_minutes, processing_times_seconds, strict=False):
         audio_length_seconds = audio_length * 60  # Convert minutes to seconds
         ratio = processing_time / audio_length_seconds
         total_ratio += ratio
@@ -129,7 +129,7 @@ class EpisodeTranscriber:
             logger.error(f"Error setting up Whisper model: {e}")
             raise
 
-    def transcribe(self, mp3_file: str) -> Optional[str]:
+    def transcribe(self, mp3_file: str) -> str | None:
         """
         Transcribe the given MP3 file.
 
@@ -159,7 +159,7 @@ class EpisodeTranscriber:
             logger.error(f"Error during transcription: {e}")
             return None
 
-    def save(self, outputs: Dict[str, Any], mp3_file: str) -> str:
+    def save(self, outputs: dict[str, Any], mp3_file: str) -> str:
         """
         Save transcription to a text file.
 

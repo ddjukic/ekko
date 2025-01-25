@@ -8,13 +8,12 @@ This module provides consistent logging setup across all modules with:
 - Optional JSON logging for production
 """
 
+import json
 import logging
 import logging.handlers
 import sys
-from pathlib import Path
-from typing import Optional, Dict, Any
-import json
 from datetime import datetime
+from pathlib import Path
 
 
 class StructuredFormatter(logging.Formatter):
@@ -74,10 +73,10 @@ class JSONFormatter(logging.Formatter):
 
 def setup_logging(
     log_level: str = "INFO",
-    log_file: Optional[str] = None,
+    log_file: str | None = None,
     log_dir: str = "./logs",
     use_json: bool = False,
-    module_levels: Optional[Dict[str, str]] = None
+    module_levels: dict[str, str] | None = None
 ) -> None:
     """
     Configure logging for the entire application.

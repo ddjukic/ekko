@@ -1,11 +1,11 @@
-import feedparser
-from datetime import datetime, timedelta
-from abc import ABC, abstractmethod
-import requests
-from typing import List, Optional
+import logging
 import os
 import sys
-import logging
+from abc import ABC, abstractmethod
+from datetime import datetime
+
+import feedparser
+import requests
 
 # Add parent directory to path for imports
 parent_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -14,13 +14,14 @@ if parent_dir not in sys.path:
 
 from models import EpisodeModel
 
+
 class FeedParserStrategy(ABC):
     """
     Abstract base class for feed parsing strategies.
     """
     
     @abstractmethod
-    def parse(self, feed_content: str) -> List[EpisodeModel]:
+    def parse(self, feed_content: str) -> list[EpisodeModel]:
         """
         Parse the feed content and return a list of Episodes.
         
@@ -37,7 +38,7 @@ class DefaultFeedParserStrategy(FeedParserStrategy):
     Default feed parsing strategy using feedparser library.
     """
     
-    def parse(self, feed_content: str) -> List[EpisodeModel]:
+    def parse(self, feed_content: str) -> list[EpisodeModel]:
         """
         Parse the default feed content to extract episode information.
         
@@ -121,7 +122,7 @@ class FeedParser:
         return DefaultFeedParserStrategy()
 
     @staticmethod
-    def parse_feed(feed_url: str) -> List[EpisodeModel]:
+    def parse_feed(feed_url: str) -> list[EpisodeModel]:
         """
         Fetch and parse the podcast feed.
         

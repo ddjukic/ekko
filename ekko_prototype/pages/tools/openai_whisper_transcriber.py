@@ -5,13 +5,11 @@ This module provides transcription using OpenAI's Whisper API instead of
 local Hugging Face models.
 """
 
-import os
 import json
 import logging
-from typing import Optional, Dict, Any, List
-from pathlib import Path
+import os
+from typing import Any
 
-import openai
 from openai import OpenAI
 
 logger = logging.getLogger(__name__)
@@ -27,8 +25,8 @@ class OpenAIWhisperTranscriber:
     
     def __init__(
         self,
-        api_key: Optional[str] = None,
-        credentials_file: Optional[str] = None,
+        api_key: str | None = None,
+        credentials_file: str | None = None,
         parent_folder: str = "./transcripts",
         model: str = "whisper-1"
     ):
@@ -57,7 +55,7 @@ class OpenAIWhisperTranscriber:
         self.client = OpenAI(api_key=self.api_key)
         logger.info(f"Initialized OpenAI Whisper transcriber with model: {model}")
     
-    def _load_api_key(self, credentials_file: Optional[str]) -> Optional[str]:
+    def _load_api_key(self, credentials_file: str | None) -> str | None:
         """
         Load API key from credentials file.
         
@@ -79,7 +77,7 @@ class OpenAIWhisperTranscriber:
                 return None
         
         try:
-            with open(credentials_file, 'r') as f:
+            with open(credentials_file) as f:
                 creds = json.load(f)
                 return creds.get('api_key')
         except Exception as e:
@@ -89,10 +87,10 @@ class OpenAIWhisperTranscriber:
     def transcribe(
         self,
         audio_file_path: str,
-        language: Optional[str] = None,
-        prompt: Optional[str] = None,
+        language: str | None = None,
+        prompt: str | None = None,
         temperature: float = 0.0
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Transcribe an audio file using OpenAI Whisper API.
         
@@ -154,9 +152,9 @@ class OpenAIWhisperTranscriber:
     def transcribe_with_timestamps(
         self,
         audio_file_path: str,
-        language: Optional[str] = None,
-        prompt: Optional[str] = None
-    ) -> Optional[Dict[str, Any]]:
+        language: str | None = None,
+        prompt: str | None = None
+    ) -> dict[str, Any] | None:
         """
         Transcribe with timestamp information.
         
@@ -207,10 +205,10 @@ class OpenAIWhisperTranscriber:
     def _transcribe_large_file(
         self,
         audio_file_path: str,
-        language: Optional[str] = None,
-        prompt: Optional[str] = None,
+        language: str | None = None,
+        prompt: str | None = None,
         temperature: float = 0.0
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Handle large files that exceed OpenAI's 25MB limit.
         
@@ -253,7 +251,7 @@ class OpenAIWhisperTranscriber:
         """
         return os.path.getsize(file_path) > self.MAX_FILE_SIZE
     
-    def _chunk_audio_file(self, file_path: str) -> List[str]:
+    def _chunk_audio_file(self, file_path: str) -> list[str]:
         """
         Chunk audio file into smaller pieces.
         
@@ -294,8 +292,8 @@ class OpenAIWhisperTranscriber:
     def translate(
         self,
         audio_file_path: str,
-        prompt: Optional[str] = None
-    ) -> Optional[str]:
+        prompt: str | None = None
+    ) -> str | None:
         """
         Translate audio to English using OpenAI Whisper API.
         

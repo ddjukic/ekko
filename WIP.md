@@ -212,7 +212,7 @@ ekko is an AI-powered podcast discovery, transcription, and summarization platfo
 - [x] Optimize for Google Cloud Run - **COMPLETED**
 - [x] Add health checks - **COMPLETED**
 - [x] Configure auto-scaling - **COMPLETED**
-- [x] Create docker-compose for local development - **COMPLETED**
+- [x] ~~Create docker-compose for local development~~ - **REMOVED** (Single container only)
 - [x] Add .dockerignore file - **COMPLETED**
 
 ### Phase 6: CI/CD Pipeline (COMPLETED)

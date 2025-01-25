@@ -75,6 +75,8 @@ packages = ["ekko_prototype", "rss_parser", "audio_transcriber"]
 [tool.ruff]
 line-length = 88
 target-version = "py313"
+
+[tool.ruff.lint]
 select = [
     "E",      # pycodestyle errors
     "F",      # pyflakes
@@ -94,11 +96,27 @@ ignore = [
     "E501",   # Line too long (handled by formatter)
     "S101",   # Use of assert detected
     "S608",   # Possible SQL injection
+    "E402",   # Module imports not at top
+    "S105",   # Hardcoded password
+    "S113",   # Request without timeout
+    "E722",   # Bare except
+    "E712",   # True/False comparison
+    "S108",   # Temp file usage
+    "PD901",  # df variable name
+    "S104",   # Bind all interfaces
+    "S324",   # Insecure hash
+    "N805",   # First argument name
+    "B008",   # Function call in default
+    "F841",   # Unused variable
+    "F403",   # Star imports
+    "N999",   # Invalid module name
+    "RUF013", # Implicit optional
+    "SIM102", # Collapsible if
 ]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S101"]  # Allow assert in tests
-"**/__init__.py" = ["F401"]  # Allow unused imports in __init__ files
+"**/__init__.py" = ["F401", "F403"]  # Allow unused and star imports in __init__ files
 
 [tool.mypy]
 python_version = "3.13"

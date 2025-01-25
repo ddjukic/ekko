@@ -1,7 +1,9 @@
-import streamlit as st
-import requests
 import threading
 import time
+
+import requests
+import streamlit as st
+
 
 def long_running_task(url, filename='yolov8x.pt'):
     # Send a GET request

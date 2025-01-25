@@ -1,7 +1,8 @@
 import logging
 import os
+
 import requests
-from typing import Optional
+
 
 class EpisodeDownloader:
     """
@@ -17,7 +18,7 @@ class EpisodeDownloader:
         self.logger = logging.getLogger(__name__)
         self.verbose = verbose
 
-    def download_single_episode(self, url: str, title: str, feed_title: str) -> Optional[str]:
+    def download_single_episode(self, url: str, title: str, feed_title: str) -> str | None:
         """
         Download a single episode with streaming and progress tracking.
 

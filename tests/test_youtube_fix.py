@@ -3,9 +3,17 @@
 Test the fixed YouTube transcript fetching with yt-dlp.
 """
 
-import sys
-import os
 import logging
+import os
+import sys
+
+# Add project paths
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from ekko_prototype.pages.tools.youtube_detector import (
+    TranscriptSource,
+    YouTubePodcastDetector,
+)
 
 # Set up logging
 logging.basicConfig(
@@ -14,10 +22,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Add project paths
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-from ekko_prototype.pages.tools.youtube_detector import YouTubePodcastDetector, TranscriptSource
 
 def test_youtube_transcript():
     """Test YouTube transcript fetching with a real video."""
@@ -32,7 +36,7 @@ def test_youtube_transcript():
     result = detector.fetch_youtube_transcript(test_url)
     
     if result and result.text:
-        logger.info(f"✅ Successfully fetched transcript!")
+        logger.info("✅ Successfully fetched transcript!")
         logger.info(f"Source: {result.source.value}")
         logger.info(f"Quality score: {result.quality_score:.2f}")
         logger.info(f"Text length: {len(result.text)} characters")

@@ -4,8 +4,8 @@ Sphinx Docstring Format Guide for ekko Project
 This file demonstrates the Sphinx docstring format that we'll use throughout the project.
 """
 
-from typing import Optional, List, Dict, Any, Generator
-from datetime import datetime
+from collections.abc import Generator
+from typing import Any
 
 
 class ExampleClass:
@@ -38,7 +38,7 @@ class ExampleClass:
        This is a warning about potential issues
     """
     
-    def __init__(self, name: str, value: Optional[int] = None):
+    def __init__(self, name: str, value: int | None = None):
         """
         Initialize the ExampleClass.
         
@@ -71,9 +71,9 @@ class ExampleClass:
     
     def complex_method(
         self,
-        items: List[str],
-        options: Optional[Dict[str, Any]] = None
-    ) -> Generator[str, None, None]:
+        items: list[str],
+        options: dict[str, Any] | None = None
+    ) -> Generator[str]:
         """
         A complex method with multiple parameters and a generator return type.
         

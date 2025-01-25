@@ -2,7 +2,9 @@
 """Test ekko Streamlit application with Playwright"""
 
 import asyncio
+
 from playwright.async_api import async_playwright
+
 
 async def test_ekko_app():
     """Test the ekko Streamlit application"""

@@ -1,11 +1,13 @@
-from fastapi import FastAPI, HTTPException, Depends
-from fastapi.security import HTTPBearer
-from pyngrok import ngrok
-import uvicorn
-from audio_transcriber import EpisodeTranscriber
-from episode_downloader import EpisodeDownloader
-from pydantic import BaseModel
 import logging
+
+import uvicorn
+from episode_downloader import EpisodeDownloader
+from fastapi import Depends, FastAPI, HTTPException
+from fastapi.security import HTTPBearer
+from pydantic import BaseModel
+from pyngrok import ngrok
+
+from audio_transcriber import EpisodeTranscriber
 
 # TODO:
 # figure out why logging isnt flushed to a file

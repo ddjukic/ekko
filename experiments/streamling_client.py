@@ -1,6 +1,7 @@
 # Usage
-import streamlit as st
 import requests
+import streamlit as st
+
 
 def consume_stream(url, token):
     headers = {"Authorization": f"Bearer {token}"}

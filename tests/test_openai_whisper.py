@@ -2,17 +2,16 @@
 Unit tests for OpenAI Whisper transcription.
 """
 
-import unittest
-from unittest.mock import Mock, patch, MagicMock, mock_open
-import sys
-import os
 import json
+import os
+import sys
 import tempfile
+import unittest
+from unittest.mock import MagicMock, mock_open, patch
 
 # Add the parent directory to the path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from ekko_prototype.pages.tools.audio_transcriber import EpisodeTranscriber
 
 
 class TestOpenAIWhisperTranscriber(unittest.TestCase):
@@ -45,7 +44,9 @@ class TestOpenAIWhisperTranscriber(unittest.TestCase):
         mock_client.audio.transcriptions.create.return_value = mock_response
         
         # Create transcriber with OpenAI API key
-        from ekko_prototype.pages.tools.openai_whisper_transcriber import OpenAIWhisperTranscriber
+        from ekko_prototype.pages.tools.openai_whisper_transcriber import (
+            OpenAIWhisperTranscriber,
+        )
         transcriber = OpenAIWhisperTranscriber(api_key="test-api-key")
         
         # Test transcription
@@ -83,12 +84,14 @@ class TestOpenAIWhisperTranscriber(unittest.TestCase):
         mock_response.text = "Transcribed podcast content"
         mock_client.audio.transcriptions.create.return_value = mock_response
         
-        from ekko_prototype.pages.tools.openai_whisper_transcriber import OpenAIWhisperTranscriber
+        from ekko_prototype.pages.tools.openai_whisper_transcriber import (
+            OpenAIWhisperTranscriber,
+        )
         transcriber = OpenAIWhisperTranscriber(api_key="test-api-key")
         
         # Test transcription with options
         with patch('builtins.open', mock_open(read_data=b'audio data')):
-            result = transcriber.transcribe(
+            transcriber.transcribe(
                 "/tmp/test.mp3",
                 language="en",
                 prompt="This is a podcast episode about technology."
@@ -135,7 +138,9 @@ class TestOpenAIWhisperTranscriber(unittest.TestCase):
         }
         mock_client.audio.transcriptions.create.return_value = mock_response
         
-        from ekko_prototype.pages.tools.openai_whisper_transcriber import OpenAIWhisperTranscriber
+        from ekko_prototype.pages.tools.openai_whisper_transcriber import (
+            OpenAIWhisperTranscriber,
+        )
         transcriber = OpenAIWhisperTranscriber(api_key="test-api-key")
         
         # Test transcription with timestamps
@@ -166,7 +171,9 @@ class TestOpenAIWhisperTranscriber(unittest.TestCase):
         mock_openai_class.return_value = mock_client
         mock_client.audio.transcriptions.create.side_effect = Exception("API Error: Invalid API key")
         
-        from ekko_prototype.pages.tools.openai_whisper_transcriber import OpenAIWhisperTranscriber
+        from ekko_prototype.pages.tools.openai_whisper_transcriber import (
+            OpenAIWhisperTranscriber,
+        )
         transcriber = OpenAIWhisperTranscriber(api_key="invalid-key")
         
         # Test that error is handled gracefully
@@ -199,7 +206,9 @@ class TestOpenAIWhisperTranscriber(unittest.TestCase):
         
         mock_client.audio.transcriptions.create.side_effect = [mock_response1, mock_response2]
         
-        from ekko_prototype.pages.tools.openai_whisper_transcriber import OpenAIWhisperTranscriber
+        from ekko_prototype.pages.tools.openai_whisper_transcriber import (
+            OpenAIWhisperTranscriber,
+        )
         transcriber = OpenAIWhisperTranscriber(api_key="test-api-key")
         
         # Test transcription of large file
@@ -220,7 +229,9 @@ class TestOpenAIWhisperTranscriber(unittest.TestCase):
             temp_file = f.name
         
         try:
-            from ekko_prototype.pages.tools.openai_whisper_transcriber import OpenAIWhisperTranscriber
+            from ekko_prototype.pages.tools.openai_whisper_transcriber import (
+                OpenAIWhisperTranscriber,
+            )
             transcriber = OpenAIWhisperTranscriber(credentials_file=temp_file)
             self.assertEqual(transcriber.api_key, "sk-test-key-123")
         finally:
@@ -245,7 +256,9 @@ class TestOpenAIWhisperTranscriber(unittest.TestCase):
         mock_response.text = "Transcribed text"
         mock_client.audio.transcriptions.create.return_value = mock_response
         
-        from ekko_prototype.pages.tools.openai_whisper_transcriber import OpenAIWhisperTranscriber
+        from ekko_prototype.pages.tools.openai_whisper_transcriber import (
+            OpenAIWhisperTranscriber,
+        )
         
         # Test with default model (whisper-1)
         transcriber = OpenAIWhisperTranscriber(api_key="test-key")
@@ -265,8 +278,13 @@ class TestTranscriptFetcherIntegration(unittest.TestCase):
     @patch('ekko_prototype.pages.tools.openai_whisper_transcriber.OpenAIWhisperTranscriber')
     def test_unified_fetcher_youtube_fallback_to_openai(self, mock_whisper_class, mock_youtube_class, mock_downloader_class, mock_transcriber_class):
         """Test that fetcher falls back to OpenAI Whisper when YouTube fails."""
-        from ekko_prototype.pages.tools.transcript_fetcher import UnifiedTranscriptFetcher, TranscriptConfig
-        from ekko_prototype.pages.tools.youtube_detector import TranscriptResult, TranscriptSource
+        from ekko_prototype.pages.tools.transcript_fetcher import (
+            TranscriptConfig,
+            UnifiedTranscriptFetcher,
+        )
+        from ekko_prototype.pages.tools.youtube_detector import (
+            TranscriptSource,
+        )
         
         # Mock YouTube detector that returns no transcript
         mock_youtube = MagicMock()

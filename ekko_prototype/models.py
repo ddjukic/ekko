@@ -7,8 +7,9 @@ providing strong typing and validation for data structures.
 
 from datetime import datetime
 from enum import Enum
-from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, HttpUrl, field_validator, EmailStr
+from typing import Any
+
+from pydantic import BaseModel, Field, HttpUrl, field_validator
 
 
 class TranscriptSource(str, Enum):
@@ -56,11 +57,11 @@ class PodcastModel(BaseModel):
     id: int = Field(..., description="Unique podcast ID")
     title: str = Field(..., description="Podcast title")
     url: HttpUrl = Field(..., description="Podcast website URL")
-    description: Optional[str] = Field(None, description="Podcast description")
-    author: Optional[str] = Field(None, description="Podcast author/creator")
-    image: Optional[HttpUrl] = Field(None, description="Podcast cover image URL")
-    categories: List[str] = Field(default_factory=list, description="Podcast categories")
-    language: Optional[str] = Field(None, description="Primary language")
+    description: str | None = Field(None, description="Podcast description")
+    author: str | None = Field(None, description="Podcast author/creator")
+    image: HttpUrl | None = Field(None, description="Podcast cover image URL")
+    categories: list[str] = Field(default_factory=list, description="Podcast categories")
+    language: str | None = Field(None, description="Primary language")
     explicit: bool = Field(False, description="Explicit content flag")
     
     model_config = {
@@ -107,17 +108,17 @@ class EpisodeModel(BaseModel):
     """
     guid: str = Field(..., description="Unique episode identifier")
     title: str = Field(..., description="Episode title")
-    description: Optional[str] = Field(None, description="Episode description")
-    published_date: Optional[datetime] = Field(None, description="Publication date")
-    duration: Optional[str] = Field(None, description="Episode duration")
-    audio_url: Optional[HttpUrl] = Field(None, description="Audio file URL")
-    transcript_url: Optional[HttpUrl] = Field(None, description="Transcript URL if available")
-    image: Optional[HttpUrl] = Field(None, description="Episode image URL")
-    season: Optional[int] = Field(None, description="Season number")
-    episode_number: Optional[int] = Field(None, description="Episode number")
+    description: str | None = Field(None, description="Episode description")
+    published_date: datetime | None = Field(None, description="Publication date")
+    duration: str | None = Field(None, description="Episode duration")
+    audio_url: HttpUrl | None = Field(None, description="Audio file URL")
+    transcript_url: HttpUrl | None = Field(None, description="Transcript URL if available")
+    image: HttpUrl | None = Field(None, description="Episode image URL")
+    season: int | None = Field(None, description="Season number")
+    episode_number: int | None = Field(None, description="Episode number")
     
     @field_validator('duration')
-    def validate_duration(cls, v):
+    def validate_duration(self, v):
         """
         Validate and normalize duration format to HH:MM:SS.
         
@@ -159,16 +160,16 @@ class TranscriptResult(BaseModel):
     :ivar metadata: Additional metadata
     :vartype metadata: Dict[str, Any]
     """
-    text: Optional[str] = Field(None, description="Transcript text")
+    text: str | None = Field(None, description="Transcript text")
     source: TranscriptSource = Field(..., description="Source of transcript")
     quality_score: float = Field(0.0, ge=0.0, le=1.0, description="Quality score (0-1)")
-    language: Optional[str] = Field(None, description="Detected language")
-    duration_seconds: Optional[int] = Field(None, description="Audio duration in seconds")
-    word_count: Optional[int] = Field(None, description="Number of words in transcript")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
+    language: str | None = Field(None, description="Detected language")
+    duration_seconds: int | None = Field(None, description="Audio duration in seconds")
+    word_count: int | None = Field(None, description="Number of words in transcript")
+    metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
     
     @field_validator('word_count', mode='after')
-    def calculate_word_count(cls, v, values):
+    def calculate_word_count(self, v, values):
         """
         Calculate word count from text if not provided.
         
@@ -202,19 +203,19 @@ class SummaryRequest(BaseModel):
     """
     transcript_text: str = Field(..., description="Transcript text to summarize")
     summary_type: str = Field("comprehensive", description="Type of summary")
-    max_length: Optional[int] = Field(None, description="Maximum summary length")
+    max_length: int | None = Field(None, description="Maximum summary length")
     include_timestamps: bool = Field(False, description="Include timestamps in summary")
-    custom_prompt: Optional[str] = Field(None, description="Custom prompt for summary")
+    custom_prompt: str | None = Field(None, description="Custom prompt for summary")
 
 
 class SummaryResult(BaseModel):
     """Model for summary result."""
     summary: str = Field(..., description="Generated summary")
-    key_points: List[str] = Field(default_factory=list, description="Key points extracted")
-    topics: List[str] = Field(default_factory=list, description="Main topics discussed")
-    action_items: List[str] = Field(default_factory=list, description="Action items identified")
-    quotes: List[str] = Field(default_factory=list, description="Notable quotes")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
+    key_points: list[str] = Field(default_factory=list, description="Key points extracted")
+    topics: list[str] = Field(default_factory=list, description="Main topics discussed")
+    action_items: list[str] = Field(default_factory=list, description="Action items identified")
+    quotes: list[str] = Field(default_factory=list, description="Notable quotes")
+    metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
 
 
 class ChatMessage(BaseModel):
@@ -233,15 +234,15 @@ class ChatMessage(BaseModel):
     role: str = Field(..., pattern="^(user|assistant|system)$", description="Message role")
     content: str = Field(..., description="Message content")
     timestamp: datetime = Field(default_factory=datetime.now, description="Message timestamp")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
+    metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
 
 
 class ChatSession(BaseModel):
     """Model for chat session."""
     session_id: str = Field(..., description="Unique session identifier")
-    podcast_id: Optional[int] = Field(None, description="Associated podcast ID")
-    episode_guid: Optional[str] = Field(None, description="Associated episode GUID")
-    messages: List[ChatMessage] = Field(default_factory=list, description="Chat messages")
+    podcast_id: int | None = Field(None, description="Associated podcast ID")
+    episode_guid: str | None = Field(None, description="Associated episode GUID")
+    messages: list[ChatMessage] = Field(default_factory=list, description="Chat messages")
     created_at: datetime = Field(default_factory=datetime.now, description="Session creation time")
     updated_at: datetime = Field(default_factory=datetime.now, description="Last update time")
     
@@ -264,12 +265,12 @@ class ChatSession(BaseModel):
 
 class FeedbackModel(BaseModel):
     """Model for user feedback."""
-    user_id: Optional[str] = Field(None, description="User identifier")
+    user_id: str | None = Field(None, description="User identifier")
     session_id: str = Field(..., description="Session identifier")
     feedback_type: str = Field(..., description="Type of feedback")
-    rating: Optional[int] = Field(None, ge=1, le=5, description="Rating (1-5)")
-    comment: Optional[str] = Field(None, description="User comment")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
+    rating: int | None = Field(None, ge=1, le=5, description="Rating (1-5)")
+    comment: str | None = Field(None, description="User comment")
+    metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
     created_at: datetime = Field(default_factory=datetime.now, description="Feedback timestamp")
 
 
@@ -282,7 +283,7 @@ class TranscriptConfig(BaseModel):
     cache_dir: str = Field("./transcript_cache", description="Cache directory")
     max_cache_size_mb: int = Field(500, description="Maximum cache size in MB")
     whisper_model: str = Field("whisper-1", description="Whisper model to use")
-    languages: List[str] = Field(default_factory=lambda: ["en"], description="Preferred languages")
+    languages: list[str] = Field(default_factory=lambda: ["en"], description="Preferred languages")
 
 
 class AppSettings(BaseModel):

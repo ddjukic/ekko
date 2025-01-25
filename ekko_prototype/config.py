@@ -4,7 +4,7 @@ Configuration management using environment variables.
 
 import os
 from pathlib import Path
-from typing import Optional
+
 from dotenv import load_dotenv
 
 # Load environment variables from .env file only if not in test mode

@@ -2,19 +2,20 @@
 Unit tests for the authentication module.
 """
 
-import pytest
 import json
-import tempfile
-from pathlib import Path
-from datetime import datetime, timedelta
-from unittest.mock import patch, MagicMock
-import sys
 import os
+import sys
+import tempfile
+from datetime import datetime, timedelta
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from ekko_prototype.auth import SimpleAuth, EMAIL_REGEX, DEMO_USER_TRANSCRIPT_LIMIT
+from ekko_prototype.auth import DEMO_USER_TRANSCRIPT_LIMIT, EMAIL_REGEX, SimpleAuth
 
 
 class TestSimpleAuth:
@@ -63,7 +64,7 @@ class TestSimpleAuth:
         auth = SimpleAuth(user_data_file=temp_user_data)
         
         assert auth.user_data_file == Path(temp_user_data)
-        assert mock_streamlit.session_state.authenticated == False
+        assert not mock_streamlit.session_state.authenticated
         assert mock_streamlit.session_state.user_email is None
         assert mock_streamlit.session_state.transcript_count == 0
     
@@ -71,9 +72,9 @@ class TestSimpleAuth:
         """Test validate_email method."""
         auth = SimpleAuth(user_data_file=temp_user_data)
         
-        assert auth.validate_email('valid@example.com') == True
-        assert auth.validate_email('invalid.email') == False
-        assert auth.validate_email('') == False
+        assert auth.validate_email('valid@example.com')
+        assert not auth.validate_email('invalid.email')
+        assert not auth.validate_email('')
     
     def test_check_rate_limit(self, temp_user_data, mock_streamlit):
         """Test rate limit checking."""
@@ -81,19 +82,19 @@ class TestSimpleAuth:
         
         # Initial state - should have full limit
         within_limit, remaining = auth.check_rate_limit()
-        assert within_limit == True
+        assert within_limit
         assert remaining == DEMO_USER_TRANSCRIPT_LIMIT
         
         # Use one transcript
         mock_streamlit.session_state.transcript_count = 1
         within_limit, remaining = auth.check_rate_limit()
-        assert within_limit == True
+        assert within_limit
         assert remaining == DEMO_USER_TRANSCRIPT_LIMIT - 1
         
         # Use all transcripts
         mock_streamlit.session_state.transcript_count = DEMO_USER_TRANSCRIPT_LIMIT
         within_limit, remaining = auth.check_rate_limit()
-        assert within_limit == False
+        assert not within_limit
         assert remaining == 0
     
     def test_rate_limit_daily_reset(self, temp_user_data, mock_streamlit):
@@ -108,7 +109,7 @@ class TestSimpleAuth:
         
         # Check rate limit - should reset
         within_limit, remaining = auth.check_rate_limit()
-        assert within_limit == True
+        assert within_limit
         assert remaining == DEMO_USER_TRANSCRIPT_LIMIT
         assert mock_streamlit.session_state.transcript_count == 0
     
@@ -136,7 +137,7 @@ class TestSimpleAuth:
         assert os.path.exists(temp_user_data)
         
         # Load and verify data
-        with open(temp_user_data, 'r') as f:
+        with open(temp_user_data) as f:
             data = json.load(f)
         
         assert 'sessions' in data
@@ -144,7 +145,7 @@ class TestSimpleAuth:
         session_data = data['sessions']['test_session_123']
         assert session_data['email'] == 'test@example.com'
         assert session_data['transcript_count'] == 1
-        assert session_data['authenticated'] == True
+        assert session_data['authenticated']
     
     def test_can_transcribe(self, temp_user_data, mock_streamlit):
         """Test can_transcribe method."""
@@ -152,16 +153,16 @@ class TestSimpleAuth:
         
         # Not authenticated
         mock_streamlit.session_state.authenticated = False
-        assert auth.can_transcribe() == False
+        assert not auth.can_transcribe()
         
         # Authenticated with remaining limit
         mock_streamlit.session_state.authenticated = True
         mock_streamlit.session_state.transcript_count = 0
-        assert auth.can_transcribe() == True
+        assert auth.can_transcribe()
         
         # Authenticated but limit reached
         mock_streamlit.session_state.transcript_count = DEMO_USER_TRANSCRIPT_LIMIT
-        assert auth.can_transcribe() == False
+        assert not auth.can_transcribe()
     
     def test_require_auth(self, temp_user_data, mock_streamlit):
         """Test require_auth method."""
@@ -169,11 +170,11 @@ class TestSimpleAuth:
         
         # Not authenticated - should return False (login form shown)
         mock_streamlit.session_state.authenticated = False
-        assert auth.require_auth() == False
+        assert not auth.require_auth()
         
         # Authenticated - should return True
         mock_streamlit.session_state.authenticated = True
-        assert auth.require_auth() == True
+        assert auth.require_auth()
 
 
 if __name__ == '__main__':

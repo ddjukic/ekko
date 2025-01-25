@@ -5,16 +5,16 @@ This module implements intelligent agents that work together to fetch
 transcripts from various sources with quality validation.
 """
 
-import os
 import logging
-from typing import Optional, Dict, Any
-from dotenv import load_dotenv
+import os
+from typing import Any
 
-from crewai import Agent, Task, Crew, Process
+from crewai import Agent, Crew, Process, Task
+from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 
-from ..pages.tools.youtube_detector import YouTubePodcastDetector, TranscriptSource
-from ..pages.tools.transcript_fetcher import UnifiedTranscriptFetcher, TranscriptConfig
+from ..pages.tools.transcript_fetcher import TranscriptConfig, UnifiedTranscriptFetcher
+from ..pages.tools.youtube_detector import TranscriptSource, YouTubePodcastDetector
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ class TranscriptCrew:
     extract transcripts from various sources.
     """
     
-    def __init__(self, openai_api_key: Optional[str] = None):
+    def __init__(self, openai_api_key: str | None = None):
         """
         Initialize the transcript crew with specialized agents.
         
@@ -119,9 +119,9 @@ class TranscriptCrew:
         self,
         podcast_name: str,
         episode_title: str,
-        episode_audio_url: Optional[str] = None,
-        podcast_rss_url: Optional[str] = None
-    ) -> Dict[str, Any]:
+        episode_audio_url: str | None = None,
+        podcast_rss_url: str | None = None
+    ) -> dict[str, Any]:
         """
         Orchestrate agents to fetch transcript using the best available method.
         
@@ -243,7 +243,7 @@ class TranscriptCrew:
         result: str,
         podcast_name: str,
         episode_title: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Process the crew execution result into structured output.
         
@@ -331,7 +331,7 @@ class TranscriptOrchestrator:
     and coordinates with other system components.
     """
     
-    def __init__(self, openai_api_key: Optional[str] = None):
+    def __init__(self, openai_api_key: str | None = None):
         """
         Initialize the transcript orchestrator.
         
@@ -352,10 +352,10 @@ class TranscriptOrchestrator:
         self,
         podcast_name: str,
         episode_title: str,
-        episode_audio_url: Optional[str] = None,
-        podcast_rss_url: Optional[str] = None,
+        episode_audio_url: str | None = None,
+        podcast_rss_url: str | None = None,
         use_crew: bool = True
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get transcript using CrewAI or fallback to direct fetching.
         

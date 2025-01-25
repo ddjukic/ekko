@@ -5,10 +5,9 @@ This module provides a unified interface for fetching transcripts from various
 sources including YouTube and Whisper transcription services.
 """
 
+import logging
 import os
 import sys
-import logging
-from typing import Optional, Dict, Any
 from pathlib import Path
 
 # Add parent directory to path for imports
@@ -16,10 +15,12 @@ parent_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__f
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
 
-from models import TranscriptConfig as PydanticTranscriptConfig, TranscriptResult
-from .youtube_detector import YouTubePodcastDetector, TranscriptSource
+from models import TranscriptConfig as PydanticTranscriptConfig
+from models import TranscriptResult
+
 from .audio_transcriber import EpisodeTranscriber
 from .episode_downloader import EpisodeDownloader
+from .youtube_detector import TranscriptSource, YouTubePodcastDetector
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -33,7 +34,7 @@ class UnifiedTranscriptFetcher:
     Whisper-based transcription to provide the best available transcript.
     """
     
-    def __init__(self, config: Optional[PydanticTranscriptConfig] = None):
+    def __init__(self, config: PydanticTranscriptConfig | None = None):
         """
         Initialize the unified transcript fetcher.
         
@@ -60,8 +61,8 @@ class UnifiedTranscriptFetcher:
         self,
         podcast_name: str,
         episode_title: str,
-        episode_audio_url: Optional[str] = None,
-        podcast_rss_url: Optional[str] = None
+        episode_audio_url: str | None = None,
+        podcast_rss_url: str | None = None
     ) -> TranscriptResult:
         """
         Get transcript using intelligent fallback strategy.
@@ -132,7 +133,7 @@ class UnifiedTranscriptFetcher:
         self,
         podcast_rss_url: str,
         episode_title: str
-    ) -> Optional[TranscriptResult]:
+    ) -> TranscriptResult | None:
         """
         Attempt to get transcript from YouTube.
         
@@ -231,14 +232,14 @@ class UnifiedTranscriptFetcher:
                     podcast_name
                 )
                 if transcript_path and os.path.exists(transcript_path):
-                    with open(transcript_path, 'r', encoding='utf-8') as f:
+                    with open(transcript_path, encoding='utf-8') as f:
                         transcript_text = f.read()
             else:
                 # Use local Whisper
                 if self.audio_transcriber:
                     transcript_path = self.audio_transcriber.transcribe(local_audio_path)
                     if transcript_path and os.path.exists(transcript_path):
-                        with open(transcript_path, 'r', encoding='utf-8') as f:
+                        with open(transcript_path, encoding='utf-8') as f:
                             transcript_text = f.read()
                 else:
                     logger.error("Local Whisper transcriber not initialized")
@@ -282,7 +283,7 @@ class UnifiedTranscriptFetcher:
         audio_url: str,
         episode_title: str,
         podcast_name: str
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Transcribe using remote Whisper service.
         
@@ -327,7 +328,7 @@ class UnifiedTranscriptFetcher:
         self,
         podcast_name: str,
         episode_title: str
-    ) -> Optional[TranscriptResult]:
+    ) -> TranscriptResult | None:
         """
         Check cache for existing transcript.
         
@@ -347,7 +348,7 @@ class UnifiedTranscriptFetcher:
         if cache_file.exists():
             try:
                 import json
-                with open(cache_file, 'r', encoding='utf-8') as f:
+                with open(cache_file, encoding='utf-8') as f:
                     data = json.load(f)
                 
                 return TranscriptResult(
