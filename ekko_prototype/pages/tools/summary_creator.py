@@ -1,6 +1,17 @@
 import streamlit as st
 from openai import OpenAI
 import json
+import os
+import sys
+from typing import Optional, Generator, List, Dict, Any
+
+# Add parent directory to path for imports
+parent_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
+
+from config import config
+from models import SummaryRequest, SummaryResult
 
 # TODO:
 # - rename the 'system_content' and everything related to something more descriptive,
@@ -8,7 +19,8 @@ import json
 class TranscriptSummarizer:
     """Summarizes podcast transcripts using the OpenAI API."""
 
-    def __init__(self, model="gpt-4o", system_file_path="system.md", credentials_file_path="./ekko/ekko_prototype/creds/openai_credentials.json"):
+    def __init__(self, model: str = "gpt-4o", system_file_path: str = "system.md", 
+                 credentials_file_path: Optional[str] = None):
         """Initialize the summarizer with the specified model, system file, and credentials file.
 
         Args:
@@ -18,7 +30,13 @@ class TranscriptSummarizer:
         """
         self.model = model
         self.system_content = self._load_system_content(system_file_path)
-        self.api_key = self._load_api_key(credentials_file_path)
+        
+        # Try environment variable first, then JSON file
+        if credentials_file_path and os.path.exists(credentials_file_path):
+            self.api_key = self._load_api_key_from_file(credentials_file_path)
+        else:
+            self.api_key = config.OPENAI_API_KEY
+            
         self.client = OpenAI(api_key=self.api_key)
 
     def _load_system_content(self, file_path):
@@ -33,7 +51,7 @@ class TranscriptSummarizer:
         with open(file_path, 'r', encoding='utf-8') as file:
             return file.read()
 
-    def _load_api_key(self, file_path):
+    def _load_api_key_from_file(self, file_path):
         """Load the OpenAI API key from a JSON file.
 
         Args:
@@ -46,7 +64,7 @@ class TranscriptSummarizer:
             credentials = json.load(file)
             return credentials['api_key']
 
-    def summarize_transcript(self, transcript):
+    def summarize_transcript(self, transcript: str) -> Generator[str, None, None]:
         """Summarize the provided transcript using the OpenAI API.
 
         Args:

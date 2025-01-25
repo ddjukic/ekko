@@ -6,31 +6,23 @@ sources including YouTube and Whisper transcription services.
 """
 
 import os
+import sys
 import logging
 from typing import Optional, Dict, Any
-from dataclasses import dataclass, field
 from pathlib import Path
 
-from .youtube_detector import YouTubePodcastDetector, TranscriptSource, TranscriptResult
+# Add parent directory to path for imports
+parent_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
+
+from models import TranscriptConfig as PydanticTranscriptConfig, TranscriptResult
+from .youtube_detector import YouTubePodcastDetector, TranscriptSource
 from .audio_transcriber import EpisodeTranscriber
 from .episode_downloader import EpisodeDownloader
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
-
-@dataclass
-class TranscriptConfig:
-    """Configuration for transcript fetching."""
-    
-    prefer_youtube: bool = True
-    youtube_languages: list = field(default_factory=lambda: ['en'])
-    whisper_model: str = "base"
-    use_remote_whisper: bool = True
-    use_openai_whisper: bool = False  # Use OpenAI API instead of local/remote
-    cache_transcripts: bool = True
-    cache_directory: str = "./transcript_cache"
-    max_cache_size_mb: int = 500
 
 
 class UnifiedTranscriptFetcher:
@@ -41,14 +33,14 @@ class UnifiedTranscriptFetcher:
     Whisper-based transcription to provide the best available transcript.
     """
     
-    def __init__(self, config: Optional[TranscriptConfig] = None):
+    def __init__(self, config: Optional[PydanticTranscriptConfig] = None):
         """
         Initialize the unified transcript fetcher.
         
         Args:
             config: Configuration for transcript fetching
         """
-        self.config = config or TranscriptConfig()
+        self.config = config or PydanticTranscriptConfig()
         self.youtube_detector = YouTubePodcastDetector()
         
         # Only initialize local transcriber if not using OpenAI
@@ -61,7 +53,7 @@ class UnifiedTranscriptFetcher:
         
         # Set up cache directory
         if self.config.cache_transcripts:
-            self.cache_dir = Path(self.config.cache_directory)
+            self.cache_dir = Path(self.config.cache_dir)
             self.cache_dir.mkdir(parents=True, exist_ok=True)
     
     def get_transcript(
