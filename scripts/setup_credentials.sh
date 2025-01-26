@@ -206,6 +206,32 @@ if ! gcloud auth list --filter=status:ACTIVE --format="value(account)" | grep -q
     fi
 fi
 
+# Enable required APIs
+print_info "Enabling required Google Cloud APIs..."
+REQUIRED_APIS=(
+    "secretmanager.googleapis.com"      # For Secret Manager
+    "run.googleapis.com"                # For Cloud Run
+    "artifactregistry.googleapis.com"   # For Artifact Registry (Docker images)
+    "cloudbuild.googleapis.com"         # For Cloud Build
+    "containerregistry.googleapis.com"  # For Container Registry (gcr.io)
+    "iamcredentials.googleapis.com"     # For service account impersonation
+)
+
+if [ "$DRY_RUN" = false ]; then
+    for api in "${REQUIRED_APIS[@]}"; do
+        print_info "Enabling API: $api"
+        gcloud services enable "$api" --project="$PROJECT_ID" || {
+            print_warning "Could not enable $api (may already be enabled)"
+        }
+    done
+    print_success "All required APIs enabled"
+else
+    print_info "[DRY RUN] Would enable the following APIs:"
+    for api in "${REQUIRED_APIS[@]}"; do
+        echo "  - $api"
+    done
+fi
+
 # Function to create or update a secret
 create_or_update_secret() {
     local secret_name=$1
@@ -260,11 +286,53 @@ create_or_update_secret "auth-token" "$AUTH_TOKEN"
 print_info "Granting Cloud Run service account access to secrets..."
 
 # Determine the service account
+DEPLOY_SERVICE_ACCOUNT="ekko-deploy@${PROJECT_ID}.iam.gserviceaccount.com"
 SERVICE_ACCOUNT="${SERVICE_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
 COMPUTE_SERVICE_ACCOUNT="${PROJECT_ID}-compute@developer.gserviceaccount.com"
 
-# Try the default compute service account if specific one doesn't exist
-if ! gcloud iam service-accounts describe "$SERVICE_ACCOUNT" --project="$PROJECT_ID" &>/dev/null; then
+# Check which service account to use
+if gcloud iam service-accounts describe "$DEPLOY_SERVICE_ACCOUNT" --project="$PROJECT_ID" &>/dev/null; then
+    print_info "Using deployment service account: $DEPLOY_SERVICE_ACCOUNT"
+    SERVICE_ACCOUNT="$DEPLOY_SERVICE_ACCOUNT"
+
+    # Check if we need to grant additional permissions to the deployment service account
+    # This requires Owner or IAM Admin role on the project
+    print_info "Checking deployment service account permissions..."
+
+    CURRENT_ACCOUNT=$(gcloud auth list --filter=status:ACTIVE --format="value(account)")
+
+    # Only attempt to grant permissions if running as a user account (not as the service account itself)
+    if [[ "$CURRENT_ACCOUNT" != *"iam.gserviceaccount.com" ]]; then
+        print_info "Ensuring deployment service account has necessary permissions..."
+
+        # Required roles for the deployment service account
+        REQUIRED_ROLES=(
+            "roles/run.admin"                    # Deploy to Cloud Run
+            "roles/secretmanager.admin"          # Create and manage secrets
+            "roles/artifactregistry.writer"      # Push Docker images
+            "roles/storage.admin"                # Access GCS for Container Registry
+        )
+
+        if [ "$DRY_RUN" = false ]; then
+            for role in "${REQUIRED_ROLES[@]}"; do
+                print_info "Granting role: $role"
+                gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+                    --member="serviceAccount:${DEPLOY_SERVICE_ACCOUNT}" \
+                    --role="$role" \
+                    --condition=None &>/dev/null || {
+                        print_warning "Could not grant $role (may already have it or insufficient permissions)"
+                    }
+            done
+        else
+            print_info "[DRY RUN] Would grant the following roles to $DEPLOY_SERVICE_ACCOUNT:"
+            for role in "${REQUIRED_ROLES[@]}"; do
+                echo "  - $role"
+            done
+        fi
+    else
+        print_info "Running as service account, skipping permission grants"
+    fi
+elif ! gcloud iam service-accounts describe "$SERVICE_ACCOUNT" --project="$PROJECT_ID" &>/dev/null; then
     print_warning "Service account $SERVICE_ACCOUNT not found, using compute service account"
     SERVICE_ACCOUNT="$COMPUTE_SERVICE_ACCOUNT"
 fi
