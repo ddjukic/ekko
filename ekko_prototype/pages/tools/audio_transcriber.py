@@ -3,9 +3,14 @@ import os
 import time
 from typing import Any
 
-import torch
-from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
-from transformers.utils import is_flash_attn_2_available
+# Optional imports for local transcription (only used if OpenAI API is disabled)
+try:
+    import torch
+    from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
+    from transformers.utils import is_flash_attn_2_available
+    TORCH_AVAILABLE = True
+except ImportError:
+    TORCH_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 # from pydub import AudioSegment  # Commented out for Python 3.13 compatibility
@@ -88,6 +93,12 @@ class EpisodeTranscriber:
         :param model_id: The model ID for the transcription model.
         :type model_id: str
         """
+        if not TORCH_AVAILABLE:
+            raise ImportError(
+                "torch and transformers are required for local transcription. "
+                "Please install them or use OpenAI Whisper API instead by setting "
+                "use_openai_whisper=True in your configuration."
+            )
         self.parent_folder = parent_folder
         os.makedirs(self.parent_folder, exist_ok=True)
         self.setup_device_and_model(model_id)
