@@ -31,8 +31,6 @@ dependencies = [
     "requests>=2.31.0",
     "pandas>=2.2.0",
     "sqlalchemy>=2.0.25",
-    "torch>=2.2.0",
-    "transformers>=4.38.0",
     "langchain>=0.1.6",
     "langchain-community>=0.0.20",
     "langchain-openai>=0.0.5",
@@ -134,8 +132,6 @@ strict_equality = true
 module = [
     "streamlit.*",
     "feedparser.*",
-    "transformers.*",
-    "torch.*",
     "pyngrok.*",
     "readtime.*",
     "youtube_transcript_api.*",

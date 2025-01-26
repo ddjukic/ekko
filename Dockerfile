@@ -23,17 +23,9 @@ WORKDIR /app
 COPY pyproject.toml .
 COPY requirements.txt .
 
-# Create virtual environment
+# Create virtual environment and install dependencies
 RUN python -m venv .venv
-
-# Activate venv and install dependencies in stages for better caching
-# First install torch separately as it's the largest dependency
-RUN . .venv/bin/activate && \
-    uv pip install --no-cache torch --index-url https://download.pytorch.org/whl/cpu
-
-# Then install the rest of the dependencies
-RUN . .venv/bin/activate && \
-    uv pip install --no-cache -r requirements.txt
+RUN . .venv/bin/activate && uv pip install --no-cache -r requirements.txt
 
 # Stage 2: Runtime stage
 FROM python:3.13-slim

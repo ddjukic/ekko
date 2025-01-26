@@ -97,8 +97,8 @@ NGROK_URL=https://your-ngrok-url.ngrok.io
 AUTH_TOKEN=your-secure-token
 
 # Google Cloud
-GCP_PROJECT_ID=your-project-id
-GCP_REGION=us-central1
+GCP_PROJECT_ID=ekko-468919
+GCP_REGION=europe-west1
 ```
 
 #### Phase 2: GitHub Actions Setup
