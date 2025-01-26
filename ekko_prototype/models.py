@@ -8,7 +8,7 @@ providing strong typing and validation for data structures.
 from datetime import datetime
 from enum import Enum
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, HttpUrl, validator, EmailStr
+from pydantic import BaseModel, Field, HttpUrl, field_validator, EmailStr
 
 
 class TranscriptSource(str, Enum):
@@ -33,8 +33,8 @@ class PodcastModel(BaseModel):
     language: Optional[str] = Field(None, description="Primary language")
     explicit: bool = Field(False, description="Explicit content flag")
     
-    class Config:
-        schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "id": 1234,
                 "title": "Lenny's Podcast",
@@ -47,6 +47,7 @@ class PodcastModel(BaseModel):
                 "explicit": False
             }
         }
+    }
 
 
 class EpisodeModel(BaseModel):
@@ -62,7 +63,7 @@ class EpisodeModel(BaseModel):
     season: Optional[int] = Field(None, description="Season number")
     episode_number: Optional[int] = Field(None, description="Episode number")
     
-    @validator('duration')
+    @field_validator('duration')
     def validate_duration(cls, v):
         """Validate duration format."""
         if v and ':' not in v:
@@ -88,7 +89,7 @@ class TranscriptResult(BaseModel):
     word_count: Optional[int] = Field(None, description="Number of words in transcript")
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
     
-    @validator('word_count', always=True)
+    @field_validator('word_count', mode='after')
     def calculate_word_count(cls, v, values):
         """Calculate word count from text if not provided."""
         if v is None and 'text' in values and values['text']:
@@ -174,5 +175,6 @@ class AppSettings(BaseModel):
     rate_limit_enabled: bool = Field(False, description="Enable rate limiting")
     demo_user_limit: int = Field(2, description="Podcast limit for demo users")
     
-    class Config:
-        env_prefix = "EKKO_"
+    model_config = {
+        "env_prefix": "EKKO_"
+    }

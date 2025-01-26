@@ -27,7 +27,8 @@ from ekko_prototype.pages.tools.summary_creator import TranscriptSummarizer
 from ekko_prototype.pages.tools.podcast_chatbot import ChatBotInterface
 # from ekko_prototype.pages.tools.audio_transcriber import calculate_ratio, estimate_processing_time
 from ekko_prototype.pages.tools.retry import retry
-from ekko_prototype.pages.tools.transcript_fetcher import UnifiedTranscriptFetcher, TranscriptConfig
+from ekko_prototype.pages.tools.transcript_fetcher import UnifiedTranscriptFetcher
+from ekko_prototype.models import TranscriptConfig
 
 # TODO:
 # improve token security handling

@@ -1,7 +1,9 @@
 import os
+import sys
 import time
 import json
 import streamlit as st
+from typing import Optional, List, Dict, Any
 from langchain_community.document_loaders import TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
@@ -11,21 +13,30 @@ from langchain.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
+# Add parent directory to path for imports
+parent_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
+
+from config import config
+from models import ChatSession, ChatMessage
+
 
 class ChatBotInterface:
-    def __init__(self, transcript_path, model='gpt-4o', credentials_path="./ekko/ekko_prototype/creds/openai_credentials.json"):
+    def __init__(self, transcript_path: str, model: str = 'gpt-4o', 
+                 credentials_path: Optional[str] = None):
         """
         Initializes the chat bot interface with necessary paths and model.
 
-        :param credentials_path: str
-            Path to the JSON file containing the OpenAI API key.
         :param transcript_path: str
             Path to the text file containing the transcripts.
         :param model: str, optional
-            The model identifier for the OpenAI API (default is 'gpt-3.5-turbo-0125').
+            The model identifier for the OpenAI API (default is 'gpt-4o').
+        :param credentials_path: str, optional
+            Path to the JSON file containing the OpenAI API key.
         """
-        self.credentials_path = credentials_path
         self.transcript_path = transcript_path
+        self.credentials_path = credentials_path
         self.api_key = self.load_api_key()
         self.model = ChatOpenAI(model_name=model, temperature=0, 
                                 openai_api_key=self.api_key,
@@ -33,16 +44,24 @@ class ChatBotInterface:
         self.vectordb = self.setup_vector_db()
         self.qa_chain = self.setup_qa_chain()
 
-    def load_api_key(self):
+    def load_api_key(self) -> str:
         """
-        Load the OpenAI API key from a JSON file.
+        Load the OpenAI API key from environment or JSON file.
 
         :return: str
             The OpenAI API key.
         """
-        with open(self.credentials_path, 'r') as file:
-            credentials = json.load(file)
-            return credentials['api_key']
+        # Try environment variable first
+        if config.OPENAI_API_KEY:
+            return config.OPENAI_API_KEY
+            
+        # Fallback to JSON file
+        if self.credentials_path and os.path.exists(self.credentials_path):
+            with open(self.credentials_path, 'r') as file:
+                credentials = json.load(file)
+                return credentials.get('api_key', '')
+        
+        return ""
         
     def load_and_split_transcript(self):
         """

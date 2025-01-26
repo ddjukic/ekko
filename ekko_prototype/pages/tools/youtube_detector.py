@@ -7,33 +7,20 @@ on YouTube and fetch their transcripts using youtube-transcript-api.
 
 import re
 import logging
-from typing import Optional, Tuple, List, Dict
-from dataclasses import dataclass
-from enum import Enum
+import os
+import sys
+from typing import Optional, Tuple, List, Dict, Any
 
 import feedparser
 
+# Add parent directory to path for imports
+parent_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
+
+from models import TranscriptSource, TranscriptResult
+
 logger = logging.getLogger(__name__)
-
-
-class TranscriptSource(Enum):
-    """Enum representing the source of a transcript."""
-    
-    YOUTUBE_MANUAL = "youtube_manual"
-    YOUTUBE_AUTO = "youtube_auto"
-    WHISPER_LOCAL = "whisper_local"
-    WHISPER_REMOTE = "whisper_remote"
-    NOT_AVAILABLE = "not_available"
-
-
-@dataclass
-class TranscriptResult:
-    """Container for transcript fetch results."""
-    
-    text: Optional[str]
-    source: TranscriptSource
-    quality_score: float
-    metadata: Dict[str, any]
 
 
 class YouTubePodcastDetector:
