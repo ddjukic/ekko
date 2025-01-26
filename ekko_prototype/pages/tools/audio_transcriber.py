@@ -8,6 +8,7 @@ try:
     import torch
     from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
     from transformers.utils import is_flash_attn_2_available
+
     TORCH_AVAILABLE = True
 except ImportError:
     TORCH_AVAILABLE = False
