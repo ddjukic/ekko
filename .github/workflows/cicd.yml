@@ -149,7 +149,7 @@ jobs:
 
       - name: Test Docker image
         run: |
-          docker run --rm ekko:latest streamlit --version
+          docker run --rm ekko:latest /app/.venv/bin/streamlit --version
 
   deploy:
     name: Deploy to Google Cloud Run

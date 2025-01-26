@@ -23,9 +23,17 @@ WORKDIR /app
 COPY pyproject.toml .
 COPY requirements.txt .
 
-# Create virtual environment and install dependencies with uv
+# Create virtual environment
 RUN python -m venv .venv
-RUN . .venv/bin/activate && uv pip install --no-cache -r requirements.txt
+
+# Activate venv and install dependencies in stages for better caching
+# First install torch separately as it's the largest dependency
+RUN . .venv/bin/activate && \
+    uv pip install --no-cache torch --index-url https://download.pytorch.org/whl/cpu
+
+# Then install the rest of the dependencies
+RUN . .venv/bin/activate && \
+    uv pip install --no-cache -r requirements.txt
 
 # Stage 2: Runtime stage
 FROM python:3.13-slim
@@ -77,7 +85,8 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 EXPOSE 8080
 
 # Start the Streamlit application
-CMD ["streamlit", "run", "ekko_prototype/landing.py", \
+# Use full path to ensure streamlit is found
+CMD ["/app/.venv/bin/streamlit", "run", "ekko_prototype/landing.py", \
      "--server.port=8080", \
      "--server.address=0.0.0.0", \
      "--server.headless=true", \
