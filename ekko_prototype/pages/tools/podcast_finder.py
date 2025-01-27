@@ -117,7 +117,8 @@ class PodcastIndexSearch:
             search_results = json.loads(response.text)
             parsed_results = self.parse_search_results(search_results)
             # Convert Pydantic models to dicts for backward compatibility
-            return {'podcasts': [p.dict() for p in parsed_results]}
+            # Use model_dump with mode='json' to convert HttpUrl to strings
+            return {'podcasts': [p.model_dump(mode='json') for p in parsed_results]}
         else:
             return {'error': f'Received {response.status_code}'}
 

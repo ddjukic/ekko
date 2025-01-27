@@ -56,7 +56,7 @@ def transcribe_episode_request(episode, feed_title):
     # Make HTTP request to ngrok server
     url = f"{URL}/transcribe"
     data = {
-        "episode_url": episode.mp3_url,
+        "episode_url": episode.audio_url,
         "episode_title": episode.title,
         "podcast_title": feed_title
     }
@@ -143,7 +143,7 @@ def display_episodes(episodes, num_episodes, feed_title, feed_url=None):
     Displays a specified number of episodes as expandable elements with details and a 'Summarize episode' button.
 
     Args:
-        episodes (list): A list of episode objects containing title, publication_date, and mp3_url.
+        episodes (list): A list of episode objects containing title, published_date, and audio_url.
         num_episodes (int): The number of episodes to display.
         feed_title (str): The title of the podcast feed.
         feed_url (str): The RSS feed URL of the podcast.
@@ -154,7 +154,7 @@ def display_episodes(episodes, num_episodes, feed_title, feed_url=None):
             # Using Markdown to style the episode title and details
             # The h4 title is redundant; but see how to format the expander title like this
             # st.markdown(f"<h4 style='color: #f9e79f;'>{episode.title.strip()}</h4>", unsafe_allow_html=True)
-            st.markdown(f"**Published on:** {episode.publication_date}\n- Duration: {episode.duration}")
+            st.markdown(f"**Published on:** {episode.published_date}\n- Duration: {episode.duration}")
 
             button_key = f"summarize_{episode.title}"
             try:
@@ -184,7 +184,7 @@ def display_episodes(episodes, num_episodes, feed_title, feed_url=None):
                         result = fetcher.get_transcript(
                             podcast_name=feed_title,
                             episode_title=episode_title,
-                            episode_audio_url=episode.mp3_url,
+                            episode_audio_url=episode.audio_url,
                             podcast_rss_url=feed_url
                         )
                         
