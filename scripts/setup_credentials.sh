@@ -215,6 +215,7 @@ REQUIRED_APIS=(
     "cloudbuild.googleapis.com"         # For Cloud Build
     "containerregistry.googleapis.com"  # For Container Registry (gcr.io)
     "iamcredentials.googleapis.com"     # For service account impersonation
+    "compute.googleapis.com"            # For Compute Engine (required for default service account)
 )
 
 if [ "$DRY_RUN" = false ]; then
@@ -323,11 +324,33 @@ if gcloud iam service-accounts describe "$DEPLOY_SERVICE_ACCOUNT" --project="$PR
                         print_warning "Could not grant $role (may already have it or insufficient permissions)"
                     }
             done
+
+            # Grant permission to act as the default compute service account
+            # This fixes the "iam.serviceAccounts.actAs" permission error
+            print_info "Granting Service Account User role to act as compute service account..."
+
+            # Get the project number (needed for compute service account)
+            PROJECT_NUMBER=$(gcloud projects describe "$PROJECT_ID" --format="value(projectNumber)" 2>/dev/null)
+
+            if [ -n "$PROJECT_NUMBER" ]; then
+                COMPUTE_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
+                print_info "Granting actAs permission for: $COMPUTE_SA"
+
+                gcloud iam service-accounts add-iam-policy-binding "$COMPUTE_SA" \
+                    --member="serviceAccount:${DEPLOY_SERVICE_ACCOUNT}" \
+                    --role="roles/iam.serviceAccountUser" \
+                    --project="$PROJECT_ID" &>/dev/null || {
+                        print_warning "Could not grant Service Account User role (may already have it)"
+                    }
+            else
+                print_warning "Could not determine project number for compute service account"
+            fi
         else
             print_info "[DRY RUN] Would grant the following roles to $DEPLOY_SERVICE_ACCOUNT:"
             for role in "${REQUIRED_ROLES[@]}"; do
                 echo "  - $role"
             done
+            print_info "[DRY RUN] Would also grant Service Account User role to act as compute service account"
         fi
     else
         print_info "Running as service account, skipping permission grants"
