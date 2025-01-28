@@ -286,10 +286,14 @@ create_or_update_secret "auth-token" "$AUTH_TOKEN"
 # Grant Cloud Run service account access to secrets
 print_info "Granting Cloud Run service account access to secrets..."
 
+# Get the project number (needed for compute service account)
+PROJECT_NUMBER=$(gcloud projects describe "$PROJECT_ID" --format="value(projectNumber)" 2>/dev/null)
+print_info "Project number: $PROJECT_NUMBER"
+
 # Determine the service account
 DEPLOY_SERVICE_ACCOUNT="ekko-deploy@${PROJECT_ID}.iam.gserviceaccount.com"
 SERVICE_ACCOUNT="${SERVICE_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
-COMPUTE_SERVICE_ACCOUNT="${PROJECT_ID}-compute@developer.gserviceaccount.com"
+COMPUTE_SERVICE_ACCOUNT="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
 
 # Check which service account to use
 if gcloud iam service-accounts describe "$DEPLOY_SERVICE_ACCOUNT" --project="$PROJECT_ID" &>/dev/null; then
@@ -370,18 +374,31 @@ ALL_SECRETS=(
     "auth-token"
 )
 
-# Grant access to each secret
+# Grant access to each secret for both deployment and compute service accounts
+# The compute service account is what actually runs the Cloud Run service
 for secret in "${ALL_SECRETS[@]}"; do
     # Only grant access if the secret exists
     if gcloud secrets describe "$secret" --project="$PROJECT_ID" &>/dev/null; then
         print_info "Granting access to secret: $secret"
         if [ "$DRY_RUN" = false ]; then
+            # Grant access to deployment service account (for managing secrets)
             gcloud secrets add-iam-policy-binding "$secret" \
                 --member="serviceAccount:${SERVICE_ACCOUNT}" \
                 --role="roles/secretmanager.secretAccessor" \
                 --project="$PROJECT_ID" &>/dev/null || {
-                    print_warning "Could not grant access to $secret (may already have access)"
+                    print_warning "Could not grant deployment SA access to $secret (may already have access)"
                 }
+
+            # Also grant access to compute service account (for running Cloud Run)
+            if [ -n "$PROJECT_NUMBER" ]; then
+                COMPUTE_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
+                gcloud secrets add-iam-policy-binding "$secret" \
+                    --member="serviceAccount:${COMPUTE_SA}" \
+                    --role="roles/secretmanager.secretAccessor" \
+                    --project="$PROJECT_ID" &>/dev/null || {
+                        print_warning "Could not grant compute SA access to $secret (may already have access)"
+                    }
+            fi
         else
             print_info "[DRY RUN] Would grant access to secret: $secret"
         fi
