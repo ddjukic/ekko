@@ -78,7 +78,7 @@ EXPOSE 8080
 
 # Start the Streamlit application
 # Use full path to ensure streamlit is found
-CMD ["/app/.venv/bin/streamlit", "run", "ekko_prototype/landing.py", \
+CMD ["/app/.venv/bin/streamlit", "run", "ekko_prototype/app.py", \
      "--server.port=8080", \
      "--server.address=0.0.0.0", \
      "--server.headless=true", \
