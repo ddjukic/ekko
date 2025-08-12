@@ -1,0 +1,63 @@
+{
+    "Target Audience Identification": [
+    {
+        "question": "How old are you?",
+        "answers": [
+            "18-24",
+            "25-34",
+            "35-44",
+            "45-54",
+            "55-64",
+            "65+"
+        ]
+    },
+    {
+        "question": "Highest level of education?",
+        "answers": [
+            "High School",
+            "Associate Degree",
+            "Bachelor's Degree",
+            "Master's Degree",
+            "Doctorate or Higher",
+            "None of the Above"
+        ]
+    },
+    {
+        "question": "Your gender?",
+        "answers": [
+            "Male",
+            "Female",
+            "Non-binary",
+            "Diverse",
+            "None of your business 😜"
+        ]
+    },
+    {
+        "question": "Where do you get most of your content/news? (Select all that apply)",
+        "answers": [
+            "YouTube",
+            "Podcasts",
+            "Reddit",
+            "Substack",
+            "LinkedIn",
+            "Facebook",
+            "News Platforms/Websites",
+            "Other Blogs",
+            "Specific newsletters",
+            "Medium",
+            "Twitter",
+            "Instagram",
+            "Newspapers",
+            "Other (please specify)"
+        ]
+    },
+    {
+        "question": "Have you encountered others who share similar struggles with content overload and staying updated with relevant information?",
+        "answers": [
+            "Yes, many!",
+            "Yes, a few.",
+            "No, not really."
+        ]
+    }
+]
+}

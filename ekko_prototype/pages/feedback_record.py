@@ -1,0 +1,329 @@
+import json
+import os
+import glob
+import streamlit as st
+from streamlit_pills import pills
+import re
+import datetime
+
+ekko_icon = glob.glob('./**/ekko.png', recursive=True)[0]
+st.set_page_config(page_title='ekko v0.1', page_icon=ekko_icon, layout='wide')
+
+if 'feedback_round' not in st.session_state or st.session_state['feedback_round'] == 'general':
+    st.session_state['feedback_round'] = 'general'
+
+    # load the questions from the JSON file
+    with open('./ekko/ekko_prototype/pages/tools/resources/Survey_Questions.json') as file:
+        problem_questions_answers = json.load(file)['Problem Identification']
+    with open('./ekko/ekko_prototype/pages/tools/resources/Target_Audience_Questions.json') as file:
+        audience_question_answers = json.load(file)['Target Audience Identification']
+
+    # merge the two lists of dicts
+    questions = list(problem_questions_answers)
+    questions.extend(audience_question_answers)
+
+    # select audience Questions ONLY
+    audience_questions = [q['question'] for q in audience_question_answers]
+
+else:
+    # the prototype evaluation questions
+    st.session_state['feedback_round'] = 'prototype_evaluation'
+    # load the product questions from the JSON file
+    with open('./ekko/ekko_prototype/pages/tools/resources/Prototype_Evaluation_Questions.json') as file:
+        question_answers = json.load(file)
+
+    questions = list(question_answers)
+    # empty initialize to avoid errors downstream
+    audience_questions = []
+
+def validate_email(email):
+    pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
+    if re.match(pattern, email):
+        return True
+    else:
+        return False
+    
+def render_question_single(question, answers):
+    st.markdown(f"##### {question}")
+    # kick out the 'Other' option as it is handled separately
+    answers = [answer for answer in answers if answer != 'Other (please specify)']
+    choice = st.radio('placeholder', options=answers, key=f'{question}_radio', index=None, label_visibility='collapsed')
+    return choice
+
+def render_multiple_choice(question, answers):
+    st.markdown(f"##### {question}")
+    # kick out the 'Other' option as it is handled separately
+    answers = [answer for answer in answers if answer != 'Other (please specify)']
+    choice = st.multiselect('placeholder', options=answers, key=f'{question}_multiselect', default=None, label_visibility='collapsed')
+    return choice
+
+def render_question_scale(question, answers):
+    st.markdown(f"##### {question}")
+    choice = st.slider('placeholder', min_value=int(answers[0]), max_value=int(answers[-1]), 
+                       value=5, key=f'{question}_slider', step=1, label_visibility='collapsed')
+    return choice
+
+def render_interests():
+    with open('./ekko/ekko_prototype/pages/tools/resources/interests.json') as file:
+        interests_with_icons = json.load(file)['interests_with_icons']
+
+    st.markdown("##### Please select your interests:")
+    selected_interests = pills("", list(interests_with_icons.keys()), icons=list(interests_with_icons.values()), key="interests", multiselect=True, index=[0])
+
+    return selected_interests
+
+def render_email_input():
+    email = st.text_input("An email address where we could reach you 😊")
+
+    if email:
+        if not validate_email(email):
+            st.error("Invalid email address; please enter a valid email address.")
+            st.stop()
+        else:
+            # save email to the state
+            st.session_state['email'] = email
+            st.rerun()
+            
+def render_other_input(question):
+    other_text = st.text_input("", key=f'{question}_other', label_visibility='collapsed', placeholder="Other (please specify)")
+    return other_text
+
+def record_feedback(question, choice, followup=False):
+    if not len(choice) or (len(choice) == 1 and choice[0] is None):
+        st.error("Please select an option before proceeding.")
+        st.stop()
+    st.session_state[f'{question}_feedback'] = choice
+    # do not increment the counter if this is a followup question
+    if not followup:
+        st.session_state['question_counter'] += 1
+            
+def dump_state():
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    timestamp_friendly = timestamp.replace(" ", "_").replace(":", "-")
+
+    email = st.session_state.get('email', 'email_not_provided')
+    name = email.split('@')[0].replace('.', '_')
+
+    # pull all keys and values from the session state
+    session_data = {key: value for key, value in st.session_state.items() if key != 'question_counter' and key.endswith('_feedback')}
+    state = {
+        "timestamp": timestamp,
+        "email": email,
+        "data": session_data
+    }
+
+    feedback_dir = './ekko/ekko_prototype/feedback/'
+    filename = f'session_state_{name}_{timestamp_friendly}.json'
+    file_path = os.path.join(feedback_dir, filename)
+    with open(file_path, 'a') as file:
+        json.dump(state, file)
+        file.write('\n')
+
+
+################################################################
+################################################################
+
+if st.session_state['feedback_round'] == 'general':
+    st.title("ekko: Introduction form 👋")
+else:
+    st.title("ekko: Feedback Form 📝")
+
+################################################################
+### START OF THE FEEDBACK FORM
+################################################################
+
+
+if 'question_counter' not in st.session_state:
+    st.session_state['question_counter'] = 0
+
+while st.session_state['question_counter'] < len(questions):
+
+    question_answers = questions[st.session_state['question_counter']]
+    question = question_answers['question']
+    answers = question_answers['answers']
+
+    if st.session_state.question_counter \
+        and questions[st.session_state['question_counter'] - 1]['question'] == "Would you be willing to answer more of our questions or do a live feedback session?" \
+        and st.session_state['Would you be willing to answer more of our questions or do a live feedback session?_feedback'][0] == "Yes! 🎉" \
+        and 'email' not in st.session_state:
+            render_email_input()
+            st.stop()       
+
+    if question in audience_questions:
+        st.success('#### Almost there, just a few more questions about you! 🙏🏽')
+
+    if 'Interests_feedback' not in st.session_state and question in audience_questions:
+        with st.form('_interests'):
+            selected_interests = render_interests()
+            submit_button = st.form_submit_button(label='Save')
+
+            if submit_button:
+                record_feedback('Interests', selected_interests)
+                # decrease the state by 1 so we dont miss the other questions
+                # coming from the jsons
+                # hacky but whatever
+                st.session_state['question_counter'] -= 1
+                st.rerun()
+            else:
+                break
+
+    ################################################################
+    ######### followup branch
+    ################################################################
+
+    # followup email
+    if st.session_state['question_counter']:
+        previous_question = questions[st.session_state['question_counter'] - 1]['question']
+
+        email_provide_trigger_question = 'Would you be willing to answer more of our questions or do a live feedback session?'
+        email_provide_trigger_question_answer = email_provide_trigger_question + '_feedback'
+
+        # followup scale; what to improve
+        what_to_improve_trigger_question = "On a scale of 1 to 10, how well do you feel the summaries captured the essence of the episode?"
+        what_to_improve_trigger_question_answer = what_to_improve_trigger_question + '_feedback'
+
+        # record email if the user is willing to provide it
+        # st.write(previous_question)
+        # st.write('answer:', st.session_state[previous_question + '_feedback'])
+        # st.write(st.session_state)
+        if previous_question == email_provide_trigger_question and st.session_state[email_provide_trigger_question_answer] == 'Yes! 🎉' \
+            and 'email' not in st.session_state:
+                render_email_input()
+
+        if previous_question == what_to_improve_trigger_question and f'What improvements would you suggest in the summary?_feedback' not in st.session_state:
+            if st.session_state[what_to_improve_trigger_question_answer][0] < 8:
+
+                question = "What improvements would you suggest for the summary to get a better score?"
+                answers = ["the structure (sections)", "the tone", "the length", "too much detail", "not enough detail", "accuracy", "I'd like to listen to the quotes", "Other (please specify)"]
+                
+                with st.form(f'{previous_question}_improve'):
+                    choice = render_multiple_choice(question, answers) 
+                    other_text = render_other_input(question)
+                    if other_text:
+                        choice_other = f"Other: {other_text}"
+                    else:
+                        choice_other = None
+                    submit_button = st.form_submit_button(label='Save')
+
+                    if submit_button:
+                        
+                        choices = [elem for elem in [choice, other_text] if len(elem) and elem is not None]
+
+                        record_feedback(question, choices, followup=True)
+                        st.rerun()
+                    else:
+                        break
+        
+        # new followup question from Marko regarding the reasons for content overload
+        ## more complex branching
+        # struggle_a = 'How often do you find it challenging to filter out irrelevant or low-quality content to find what truly interests you?'
+        # struggle_a_triggers = set(["Often - It's a frequent struggle.", "Sometimes - I can get overwhelmed by too much new content."])
+        # struggle_b = 'Do you experience FOMO (fear of missing out) when trying to keep up with the latest news and trends?'
+        # struggle_b_triggers = set(["Several times a week - I often feel like I'm behind.", "About once a week - Mainly with certain topics."])
+        # struggle_followup_question = 'What are the main reasons you find it challenging to deal with the content overload?'
+        
+        
+        # if f'{struggle_a}_feedback' in st.session_state \
+        # and f'{struggle_b}_feedback' in st.session_state \
+        # and set(st.session_state.get(f'{struggle_a}_feedback', set())).intersection(struggle_a_triggers) \
+        # and set(st.session_state.get(f'{struggle_b}_feedback', set())).intersection(struggle_b_triggers) \
+        # and f'{struggle_followup_question}_feedback' not in st.session_state:
+
+        struggle_question = 'Do you have multiple ever-growing reading or watch-later lists?'
+        followup_struggle_question = 'What are the main reasons you find it challenging to deal with the content overload?'
+        if st.session_state.get(f'{struggle_question}_feedback', [0])[0] == 'Yes'\
+        and f'{followup_struggle_question}_feedback' not in st.session_state:
+            
+            question = followup_struggle_question
+            
+            answers = [
+                            "Time Constraints: Busy schedules can make it difficult to find time for content consumption.",
+                            "Efficient Tools: Access to efficient tools for content consumption is often lacking.",
+                            "Volume of Content: The amount of available content can feel overwhelming.",
+                            "Relevance of Content: Discovering content that truly aligns with personal interests can be hard.",
+                            "Other (please specify)"
+                        ]
+
+            with st.form(f'followup_struggle'):
+                choice = render_multiple_choice(question, answers) 
+                other_text = render_other_input(question)
+                if other_text:
+                    choice_other = f"Other: {other_text}"
+                else:
+                    choice_other = None
+                submit_button = st.form_submit_button(label='Save')
+
+                if submit_button:
+                    
+                    choices = [elem for elem in [choice, other_text] if len(elem) and elem is not None]
+
+                    record_feedback(question, choices, followup=True)
+                    st.rerun()
+                else:
+                    break
+    
+    ################################################################
+    ### QUESTION TYPE SELECTION BRANCHING
+    ################################################################
+
+    with st.form('_form'):
+        if question in ['Where do you get most of your content/news? (Select all that apply)', 
+                        'Why is it important for you to keep up with the latest news and trends?',
+                        "You've experienced the podcast summarization functionality. Which other media sources would you like to be able to summarize in a similar way and keep in your 'digital brain'?"]:
+            choice = render_multiple_choice(question, answers)
+            if 'Other (please specify)' in answers:
+                other_text = render_other_input(question)
+                if other_text:
+                    choice_other = f"Other: {other_text}"
+                else:
+                    choice_other = None
+            # scale questions
+        elif question.startswith('On a scale of'):
+            choice = render_question_scale(question, answers)
+        # questions with 'Other' option
+        elif 'Other (please specify)' in answers:
+            choice = render_question_single(question, answers)
+            other_text = render_other_input(question)
+            if other_text:
+                choice_other = f"Other: {other_text}"
+            else:
+                choice_other = None
+        else:
+            choice = render_question_single(question, answers)    
+
+        submit_button = st.form_submit_button(label='Save')
+
+        if submit_button:
+                
+            # choices = [choice]
+            # if f'{question}_other' in st.session_state and st.session_state[f'{question}_other']:
+                # choices.append(choice_other)
+
+            # record_feedback(question, choices)
+
+            choices = [elem for elem in [choice, st.session_state.get(f'{question}_other')] if elem]
+            record_feedback(question, choices)
+
+            # record_feedback(question, choice)
+            # if f'{question}_other' in st.session_state and st.session_state[f'{question}_other']:
+            #     record_feedback(question + '_other', choice_other, followup=True)
+            st.rerun()
+        else:
+            break
+
+else:
+    dump_state()
+    if st.session_state['feedback_round'] == 'general':
+        st.success("#### Survey form submitted successfully!\nThank you for participating! 🙏🥰")
+        st.page_link('./pages/app.py', label="Click here to start the app 🚀")
+    else:
+        st.success("Thank you for the feedback! 🙏🏽")
+        st.write("Please feel free to share this product with other you know who might benefit from it;")
+        st.write("Any extra feedback means a lot to us! 😊")
+        st.write()
+        st.write("If you have additional feedback you would like to discuss, don't hestitate to send us an email 😊")
+        email = "d.dejan.djukic@gmail.com"
+        st.write(f"Email: {email}")
+
+        st.write()
+        st.page_link('pages/app.py', label="Do another round! (back to the app) 😎")

@@ -1,0 +1,16 @@
+feedparser
+requests
+pandas
+sqlalchemy
+openai
+streamlit
+streamlit-feedback
+torch
+transformers
+git+https://github.com/cceyda/streamlit-pills@multiselect_release#egg=streamlit-pills
+langchain
+langchain-community
+langchain-openai
+chromadb
+tiktoken
+readtime
