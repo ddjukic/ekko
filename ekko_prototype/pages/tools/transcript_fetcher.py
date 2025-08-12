@@ -50,7 +50,13 @@ class UnifiedTranscriptFetcher:
         """
         self.config = config or TranscriptConfig()
         self.youtube_detector = YouTubePodcastDetector()
-        self.audio_transcriber = EpisodeTranscriber()
+        
+        # Only initialize local transcriber if not using OpenAI
+        if not self.config.use_openai_whisper:
+            self.audio_transcriber = EpisodeTranscriber()
+        else:
+            self.audio_transcriber = None
+            
         self.episode_downloader = EpisodeDownloader('./audio')
         
         # Set up cache directory
@@ -227,10 +233,14 @@ class UnifiedTranscriptFetcher:
                         transcript_text = f.read()
             else:
                 # Use local Whisper
-                transcript_path = self.audio_transcriber.transcribe(local_audio_path)
-                if transcript_path and os.path.exists(transcript_path):
-                    with open(transcript_path, 'r', encoding='utf-8') as f:
-                        transcript_text = f.read()
+                if self.audio_transcriber:
+                    transcript_path = self.audio_transcriber.transcribe(local_audio_path)
+                    if transcript_path and os.path.exists(transcript_path):
+                        with open(transcript_path, 'r', encoding='utf-8') as f:
+                            transcript_text = f.read()
+                else:
+                    logger.error("Local Whisper transcriber not initialized")
+                    raise Exception("Local Whisper transcriber not available")
             
             # Check if we got a transcript
             if transcript_text:

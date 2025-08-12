@@ -171,7 +171,8 @@ def display_episodes(episodes, num_episodes, feed_title, feed_url=None):
                     # Initialize the unified transcript fetcher
                     transcript_config = TranscriptConfig(
                         prefer_youtube=True,
-                        use_remote_whisper=False,  # Use local Whisper for now
+                        use_openai_whisper=True,  # Use OpenAI Whisper API
+                        use_remote_whisper=False,
                         cache_transcripts=True
                     )
                     fetcher = UnifiedTranscriptFetcher(transcript_config)
@@ -271,7 +272,7 @@ def search_podcast():
                 feed_url = podcast['url']
                 feed_parser = FeedParser()
                 episodes = feed_parser.parse_feed(feed_url)
-                print(feed_url)
+                logger.debug(f"Parsing feed: {feed_url}")
                 
                 # Allow users to select the number of episodes to display
                 num_episodes = st.selectbox("Select the number of past episodes to display:", (20, 50, 100, 200), index=0)

@@ -96,7 +96,10 @@ class FeedParser:
         }
         response = requests.get(feed_url, headers=headers)
 
-        print(response.content)
+        # Log only basic info, not the entire feed content
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.debug(f"Fetched RSS feed from {feed_url}, status: {response.status_code}, size: {len(response.content)} bytes")
 
         parser = FeedParser.get_parser(feed_url)
         return parser.parse(response.content)
