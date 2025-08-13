@@ -9,7 +9,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, Field, HttpUrl, field_validator
+from pydantic import BaseModel, Field, HttpUrl, field_validator, model_validator
 
 
 class TranscriptSource(str, Enum):
@@ -125,7 +125,8 @@ class EpisodeModel(BaseModel):
     episode_number: int | None = Field(None, description="Episode number")
 
     @field_validator("duration")
-    def validate_duration(self, v):
+    @classmethod
+    def validate_duration(cls, v):
         """
         Validate and normalize duration format to HH:MM:SS.
 
@@ -178,22 +179,17 @@ class TranscriptResult(BaseModel):
         default_factory=dict, description="Additional metadata"
     )
 
-    @field_validator("word_count", mode="after")
-    def calculate_word_count(self, v, values):
+    @model_validator(mode="after")
+    def calculate_word_count(self):
         """
         Calculate word count from text if not provided.
 
-        :param v: Current word count value
-        :type v: Optional[int]
-        :param values: Other field values
-        :type values: dict
-
-        :return: Word count
-        :rtype: Optional[int]
+        :return: Model instance with calculated word count
+        :rtype: TranscriptResult
         """
-        if v is None and "text" in values and values["text"]:
-            return len(values["text"].split())
-        return v
+        if self.word_count is None and self.text:
+            self.word_count = len(self.text.split())
+        return self
 
 
 class SummaryRequest(BaseModel):
