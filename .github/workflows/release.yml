@@ -34,7 +34,7 @@ jobs:
           gitchangelog > CHANGELOG.md || echo "# Changelog\n\n## ${{ github.ref_name }}\n\n- Release ${{ github.ref_name }}" > CHANGELOG.md
       
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           body_path: CHANGELOG.md
           draft: false
