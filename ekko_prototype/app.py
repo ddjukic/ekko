@@ -6,16 +6,11 @@ import glob
 import time
 import readtime
 import logging
+from ekko_prototype.logging_config import setup_streamlit_logging, get_logger
 
 # Set up logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-# Disable watchdog debug logging
-logging.getLogger('watchdog').setLevel(logging.WARNING)
-logging.getLogger('watchdog.observers.inotify_buffer').setLevel(logging.WARNING)
-logger = logging.getLogger(__name__)
+setup_streamlit_logging()
+logger = get_logger(__name__)
 
 ekko_icon = glob.glob('./**/ekko.png', recursive=True)[0]
 st.set_page_config(page_title='ekko v0.1', page_icon=ekko_icon)
