@@ -3,11 +3,13 @@ import os
 import requests
 
 class EpisodeDownloader:
-    """Handles downloading of podcast episodes.
+    """
+    Handles downloading of podcast episodes.
 
-    Attributes:
-        parent_folder (str): The parent directory for downloaded episodes.
-        verbose (bool): Flag to enable verbose logging.
+    :ivar parent_folder: The parent directory for downloaded episodes
+    :vartype parent_folder: str
+    :ivar verbose: Flag to enable verbose logging
+    :vartype verbose: bool
     """
     def __init__(self, parent_folder: str, verbose: bool = False):
         self.parent_folder = parent_folder
@@ -15,17 +17,21 @@ class EpisodeDownloader:
         self.verbose = verbose
 
     def download_single_episode(self, url, title, feed_title):
-        """Download a single episode with streaming and progress tracking.
+        """
+        Download a single episode with streaming and progress tracking.
 
-        Args:
-            url (str): The URL of the episode's MP3 file.
-            title (str): The title of the episode.
-            feed_title (str): The title of the podcast feed.
+        :param url: The URL of the episode's MP3 file
+        :type url: str
+        :param title: The title of the episode
+        :type title: str
+        :param feed_title: The title of the podcast feed
+        :type feed_title: str
 
-        Returns:
-            str: The full path of the downloaded episode.
+        :return: The full path of the downloaded episode
+        :rtype: str
 
-        Creates an MP3 file in the directory ./audio/feed_title/ named after the episode title.
+        .. note::
+           Creates an MP3 file in the directory ./audio/feed_title/ named after the episode title.
         """
         # TODO;
         # resolve the issue of the episode title being not path friendly
@@ -95,13 +101,14 @@ class EpisodeDownloader:
             return None
 
     def _create_episode_dir(self, feed_title):
-        """Create a directory for a podcast feed.
+        """
+        Create a directory for a podcast feed.
 
-        Args:
-            feed_title (str): The title of the podcast feed.
+        :param feed_title: Title of the podcast feed
+        :type feed_title: str
 
-        Returns:
-            str: The path to the created directory.
+        :return: The path to the created directory
+        :rtype: str
         """
         safe_title = "".join([c for c in feed_title if c.isalnum() or c in " -_"]).rstrip()
         episode_dir = os.path.join(self.parent_folder, safe_title)

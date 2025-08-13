@@ -15,29 +15,40 @@ if parent_dir not in sys.path:
 from models import EpisodeModel
 
 class FeedParserStrategy(ABC):
-    """Abstract base class for feed parsing strategies."""
+    """
+    Abstract base class for feed parsing strategies.
+    """
+    
     @abstractmethod
     def parse(self, feed_content: str) -> List[EpisodeModel]:
-        """Parse the feed content and return a list of Episodes.
-
-        Args:
-            feed_content (str): The content of the feed to be parsed.
-
-        Returns:
-            list: A list of EpisodeModel instances.
+        """
+        Parse the feed content and return a list of Episodes.
+        
+        :param feed_content: The raw RSS/XML content of the feed
+        :type feed_content: str
+        
+        :return: List of parsed episode models
+        :rtype: List[EpisodeModel]
         """
         pass
 
 class DefaultFeedParserStrategy(FeedParserStrategy):
-    """Default feed parsing strategy."""
+    """
+    Default feed parsing strategy using feedparser library.
+    """
+    
     def parse(self, feed_content: str) -> List[EpisodeModel]:
-        """Parse the default feed content to extract episode information.
-
-        Args:
-            feed_content (str): The content of the feed to be parsed.
-
-        Returns:
-            list: A list of EpisodeModel instances.
+        """
+        Parse the default feed content to extract episode information.
+        
+        :param feed_content: The RSS/XML content to parse
+        :type feed_content: str
+        
+        :return: List of episode models extracted from the feed
+        :rtype: List[EpisodeModel]
+        
+        .. note::
+           Handles iTunes-specific fields like itunes_duration, itunes_season, etc.
         """
         parsed_feed = feedparser.parse(feed_content)
         episodes = []
@@ -87,29 +98,40 @@ class DefaultFeedParserStrategy(FeedParserStrategy):
         return episodes
 
 class FeedParser:
-    """An RSS feed parser factory which gets the appropriate feed parser based on the feed content."""
+    """
+    An RSS feed parser factory which gets the appropriate feed parser based on the feed content.
+    """
+    
     @staticmethod
-    def get_parser(feed_url):
-        """Get the appropriate parser for the feed.
-
-        Args:
-            feed_url (str): The URL of the feed.
-
-        Returns:
-            FeedParserStrategy: An instance of a feed parser strategy.
+    def get_parser(feed_url: str) -> FeedParserStrategy:
+        """
+        Get the appropriate parser for the feed.
+        
+        :param feed_url: The URL of the feed
+        :type feed_url: str
+        
+        :return: An instance of a feed parser strategy
+        :rtype: FeedParserStrategy
+        
+        .. note::
+           Currently always returns DefaultFeedParserStrategy.
+           Future versions may select different strategies based on feed type.
         """
         # Placeholder for future logic to determine the parser
         return DefaultFeedParserStrategy()
 
     @staticmethod
     def parse_feed(feed_url: str) -> List[EpisodeModel]:
-        """Fetch and parse the podcast feed.
-
-        Args:
-            feed_url (str): The URL of the podcast feed.
-
-        Returns:
-            list: A list of EpisodeModel instances parsed from the feed.
+        """
+        Fetch and parse the podcast feed.
+        
+        :param feed_url: The URL of the podcast RSS feed
+        :type feed_url: str
+        
+        :return: List of episode models parsed from the feed
+        :rtype: List[EpisodeModel]
+        
+        :raises requests.RequestException: If feed cannot be fetched
         """
         headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',

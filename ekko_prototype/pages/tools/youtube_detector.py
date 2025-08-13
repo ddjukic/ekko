@@ -53,11 +53,11 @@ class YouTubePodcastDetector:
         """
         Extract video ID from various YouTube URL formats.
         
-        Args:
-            url: YouTube video URL
-            
-        Returns:
-            Video ID if found, None otherwise
+        :param url: YouTube video URL
+        :type url: str
+        
+        :return: Video ID if found, None otherwise
+        :rtype: Optional[str]
         """
         # First check if this is a YouTube URL
         if not any(domain in url.lower() for domain in ['youtube.com', 'youtu.be', 'youtube-nocookie.com']):
@@ -87,12 +87,13 @@ class YouTubePodcastDetector:
         """
         Search YouTube for a specific podcast episode using yt-dlp.
         
-        Args:
-            podcast_name: Name of the podcast
-            episode_title: Title of the episode
-            
-        Returns:
-            YouTube video URL if found, None otherwise
+        :param podcast_name: Name of the podcast
+        :type podcast_name: str
+        :param episode_title: Title of the episode
+        :type episode_title: str
+        
+        :return: YouTube video URL if found, None otherwise
+        :rtype: Optional[str]
         """
         import yt_dlp
         
@@ -163,12 +164,13 @@ class YouTubePodcastDetector:
         """
         Fetch transcript from YouTube video using yt-dlp.
         
-        Args:
-            video_url: YouTube video URL
-            languages: List of language codes in order of preference
-            
-        Returns:
-            TranscriptResult with transcript and metadata
+        :param video_url: YouTube video URL
+        :type video_url: str
+        :param languages: List of language codes in order of preference
+        :type languages: Optional[List[str]]
+        
+        :return: TranscriptResult with transcript and metadata
+        :rtype: TranscriptResult
         """
         import yt_dlp
         import tempfile
@@ -280,11 +282,11 @@ class YouTubePodcastDetector:
         """
         Parse a VTT subtitle file and extract the text.
         
-        Args:
-            vtt_file_path: Path to the VTT file
-            
-        Returns:
-            Extracted text without timestamps
+        :param vtt_file_path: Path to the VTT file
+        :type vtt_file_path: str
+        
+        :return: Extracted text without timestamps
+        :rtype: Optional[str]
         """
         try:
             with open(vtt_file_path, 'r', encoding='utf-8') as f:
@@ -319,14 +321,15 @@ class YouTubePodcastDetector:
         """
         Fetch transcript with timestamps for each segment.
         
-        Note: This would require parsing VTT files with timestamps preserved.
-        Currently not implemented with yt-dlp approach.
+        .. note::
+           This would require parsing VTT files with timestamps preserved.
+           Currently not implemented with yt-dlp approach.
         
-        Args:
-            video_url: YouTube video URL
-            
-        Returns:
-            List of dicts with 'text', 'start', and 'duration' keys
+        :param video_url: YouTube video URL
+        :type video_url: str
+        
+        :return: List of dicts with 'text', 'start', and 'duration' keys
+        :rtype: Optional[List[Dict]]
         """
         logger.warning("Transcript with timestamps not implemented with yt-dlp approach")
         return None
@@ -339,12 +342,13 @@ class YouTubePodcastDetector:
         """
         Check if a podcast episode is available on YouTube.
         
-        Args:
-            podcast_rss_url: RSS feed URL of the podcast
-            episode_title: Title of the episode
-            
-        Returns:
-            Tuple of (is_available, youtube_url)
+        :param podcast_rss_url: RSS feed URL of the podcast
+        :type podcast_rss_url: str
+        :param episode_title: Title of the episode
+        :type episode_title: str
+        
+        :return: Tuple of (is_available, youtube_url)
+        :rtype: Tuple[bool, Optional[str]]
         """
         try:
             # Parse RSS feed to get podcast name
@@ -374,11 +378,11 @@ class YouTubePodcastDetector:
         """
         Calculate quality score for a transcript.
         
-        Args:
-            transcript: Transcript text
-            
-        Returns:
-            Quality score between 0.0 and 1.0
+        :param transcript: Transcript text
+        :type transcript: str
+        
+        :return: Quality score between 0.0 and 1.0
+        :rtype: float
         """
         if not transcript:
             return 0.0

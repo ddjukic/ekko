@@ -142,11 +142,14 @@ def display_episodes(episodes, num_episodes, feed_title, feed_url=None):
     """
     Displays a specified number of episodes as expandable elements with details and a 'Summarize episode' button.
 
-    Args:
-        episodes (list): A list of episode objects containing title, published_date, and audio_url.
-        num_episodes (int): The number of episodes to display.
-        feed_title (str): The title of the podcast feed.
-        feed_url (str): The RSS feed URL of the podcast.
+    :param episodes: A list of episode objects containing title, published_date, and audio_url
+    :type episodes: list
+    :param num_episodes: The number of episodes to display
+    :type num_episodes: int
+    :param feed_title: The title of the podcast feed
+    :type feed_title: str
+    :param feed_url: The RSS feed URL of the podcast
+    :type feed_url: str
     """
     for episode in episodes[:num_episodes]:  # Only display up to num_episodes episodes
         episode_title = episode.title.strip()

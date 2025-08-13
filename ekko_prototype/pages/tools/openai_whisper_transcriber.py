@@ -18,7 +18,9 @@ logger = logging.getLogger(__name__)
 
 
 class OpenAIWhisperTranscriber:
-    """Transcribe audio using OpenAI's Whisper API."""
+    """
+    Transcribe audio using OpenAI's Whisper API.
+    """
     
     # Maximum file size for OpenAI API (25 MB)
     MAX_FILE_SIZE = 25 * 1024 * 1024  # 25 MB in bytes
@@ -33,11 +35,14 @@ class OpenAIWhisperTranscriber:
         """
         Initialize the OpenAI Whisper transcriber.
         
-        Args:
-            api_key: OpenAI API key (if not provided, will look in credentials_file)
-            credentials_file: Path to JSON file containing API credentials
-            parent_folder: Directory to save transcripts
-            model: OpenAI Whisper model to use (default: whisper-1)
+        :param api_key: OpenAI API key (if not provided, will look in credentials_file)
+        :type api_key: Optional[str]
+        :param credentials_file: Path to JSON file containing API credentials
+        :type credentials_file: Optional[str]
+        :param parent_folder: Directory to save transcripts
+        :type parent_folder: str
+        :param model: OpenAI Whisper model to use (default: whisper-1)
+        :type model: str
         """
         self.parent_folder = parent_folder
         os.makedirs(self.parent_folder, exist_ok=True)
@@ -53,7 +58,15 @@ class OpenAIWhisperTranscriber:
         logger.info(f"Initialized OpenAI Whisper transcriber with model: {model}")
     
     def _load_api_key(self, credentials_file: Optional[str]) -> Optional[str]:
-        """Load API key from credentials file."""
+        """
+        Load API key from credentials file.
+        
+        :param credentials_file: Path to credentials file
+        :type credentials_file: Optional[str]
+        
+        :return: API key or None if not found
+        :rtype: Optional[str]
+        """
         if not credentials_file:
             # Try default location
             default_path = os.path.join(
@@ -83,14 +96,17 @@ class OpenAIWhisperTranscriber:
         """
         Transcribe an audio file using OpenAI Whisper API.
         
-        Args:
-            audio_file_path: Path to the audio file
-            language: Language of the audio (ISO-639-1 format)
-            prompt: Optional prompt to guide the transcription
-            temperature: Sampling temperature (0-1)
-            
-        Returns:
-            Transcribed text or None if failed
+        :param audio_file_path: Path to the audio file
+        :type audio_file_path: str
+        :param language: Language of the audio (ISO-639-1 format)
+        :type language: Optional[str]
+        :param prompt: Optional prompt to guide the transcription
+        :type prompt: Optional[str]
+        :param temperature: Sampling temperature (0-1)
+        :type temperature: float
+        
+        :return: Transcribed text or None if failed
+        :rtype: Optional[str]
         """
         try:
             if not os.path.exists(audio_file_path):
@@ -144,13 +160,15 @@ class OpenAIWhisperTranscriber:
         """
         Transcribe with timestamp information.
         
-        Args:
-            audio_file_path: Path to the audio file
-            language: Language of the audio
-            prompt: Optional prompt to guide transcription
-            
-        Returns:
-            Dictionary with transcript and segments with timestamps
+        :param audio_file_path: Path to the audio file
+        :type audio_file_path: str
+        :param language: Language of the audio
+        :type language: Optional[str]
+        :param prompt: Optional prompt to guide transcription
+        :type prompt: Optional[str]
+        
+        :return: Dictionary with transcript and segments with timestamps
+        :rtype: Optional[Dict[str, Any]]
         """
         try:
             if not os.path.exists(audio_file_path):
@@ -196,8 +214,21 @@ class OpenAIWhisperTranscriber:
         """
         Handle large files that exceed OpenAI's 25MB limit.
         
-        For now, we'll return None and log an error since proper audio chunking
-        requires additional dependencies like pydub and ffmpeg.
+        .. note::
+           For now, we'll return None and log an error since proper audio chunking
+           requires additional dependencies like pydub and ffmpeg.
+        
+        :param audio_file_path: Path to the audio file
+        :type audio_file_path: str
+        :param language: Language of the audio
+        :type language: Optional[str]
+        :param prompt: Optional prompt to guide transcription
+        :type prompt: Optional[str]
+        :param temperature: Sampling temperature
+        :type temperature: float
+        
+        :return: Transcribed text or None for large files
+        :rtype: Optional[str]
         """
         file_size_mb = os.path.getsize(audio_file_path) / (1024 * 1024)
         logger.error(f"File size {file_size_mb:.1f}MB exceeds OpenAI's 25MB limit")
@@ -211,21 +242,46 @@ class OpenAIWhisperTranscriber:
         return None
     
     def _should_chunk_file(self, file_path: str) -> bool:
-        """Check if file needs to be chunked."""
+        """
+        Check if file needs to be chunked.
+        
+        :param file_path: Path to the file
+        :type file_path: str
+        
+        :return: True if file exceeds size limit
+        :rtype: bool
+        """
         return os.path.getsize(file_path) > self.MAX_FILE_SIZE
     
     def _chunk_audio_file(self, file_path: str) -> List[str]:
         """
         Chunk audio file into smaller pieces.
         
-        Note: This would require audio processing libraries like pydub.
-        For now, returning empty list as placeholder.
+        .. note::
+           This would require audio processing libraries like pydub.
+           For now, returning empty list as placeholder.
+        
+        :param file_path: Path to the audio file
+        :type file_path: str
+        
+        :return: List of chunk file paths
+        :rtype: List[str]
         """
         logger.warning("Audio chunking not implemented")
         return []
     
     def _save_transcript(self, transcript_text: str, audio_file_path: str) -> str:
-        """Save transcript to a text file."""
+        """
+        Save transcript to a text file.
+        
+        :param transcript_text: The transcript text to save
+        :type transcript_text: str
+        :param audio_file_path: Path to the original audio file
+        :type audio_file_path: str
+        
+        :return: Path to the saved transcript file
+        :rtype: str
+        """
         audio_filename = os.path.basename(audio_file_path)
         title = os.path.splitext(audio_filename)[0]
         output_file = os.path.join(self.parent_folder, f"{title}.txt")
@@ -243,12 +299,13 @@ class OpenAIWhisperTranscriber:
         """
         Translate audio to English using OpenAI Whisper API.
         
-        Args:
-            audio_file_path: Path to the audio file
-            prompt: Optional prompt to guide translation
-            
-        Returns:
-            Translated English text or None if failed
+        :param audio_file_path: Path to the audio file
+        :type audio_file_path: str
+        :param prompt: Optional prompt to guide translation
+        :type prompt: Optional[str]
+        
+        :return: Translated English text or None if failed
+        :rtype: Optional[str]
         """
         try:
             if not os.path.exists(audio_file_path):

@@ -15,25 +15,35 @@ from config import config
 from models import PodcastModel
 
 class PodcastIndexSearch:
-    """A class to interact with the PodcastIndex API to search for podcasts.
-
-    Attributes:
-        api_key (str): The API key for the PodcastIndex service.
-        api_secret (str): The API secret for the PodcastIndex service.
+    """
+    A class to interact with the PodcastIndex API to search for podcasts.
+    
+    :ivar api_key: The API key for the PodcastIndex service
+    :vartype api_key: str
+    :ivar api_secret: The API secret for the PodcastIndex service
+    :vartype api_secret: str
+    :ivar base_url: Base URL for the PodcastIndex API
+    :vartype base_url: str
     """
     def __init__(self, api_credentials_path: Optional[str] = None):
-        """Initialize the PodcastIndexSearch class by loading the API credentials."""
+        """
+        Initialize the PodcastIndexSearch class by loading the API credentials.
+        
+        :param api_credentials_path: Optional path to JSON file with credentials
+        :type api_credentials_path: Optional[str]
+        """
         self.load_api_credentials(api_credentials_path)
         self.base_url = "https://api.podcastindex.org/api/1.0/search/byterm?q="
 
     def load_api_credentials(self, path: Optional[str] = None) -> Dict[str, str]:
-        """Load the API key and secret from environment variables or JSON file.
-
-        Args:
-            path (str, optional): The path to the JSON file.
-
-        Returns:
-            dict: A dictionary containing the API key and secret.
+        """
+        Load the API key and secret from environment variables or JSON file.
+        
+        :param path: Optional path to the JSON file containing credentials
+        :type path: Optional[str]
+        
+        :return: Dictionary with 'success' or 'error' key and corresponding message
+        :rtype: Dict[str, str]
         """
         # First try environment variables
         self.api_key = config.PODCASTINDEX_API_KEY
@@ -57,8 +67,13 @@ class PodcastIndexSearch:
         
         return {'error': 'No API credentials found'}
 
-    def generate_auth_headers(self):
-        """Generate the necessary authentication headers for the request."""
+    def generate_auth_headers(self) -> Dict[str, str]:
+        """
+        Generate the necessary authentication headers for the request.
+        
+        :return: Dictionary containing authentication headers
+        :rtype: Dict[str, str]
+        """
         epoch_time = int(time.time())
         data_to_hash = self.api_key + self.api_secret + str(epoch_time)
         sha_1 = hashlib.sha1(data_to_hash.encode()).hexdigest()
@@ -71,13 +86,14 @@ class PodcastIndexSearch:
         }
 
     def parse_search_results(self, results: Dict[str, Any]) -> List[PodcastModel]:
-        """Parse the search results to extract relevant podcast information.
-
-        Args:
-            results (dict): The search results to parse.
-
-        Returns:
-            list: A list of PodcastModel instances.
+        """
+        Parse the search results to extract relevant podcast information.
+        
+        :param results: The raw search results from the API
+        :type results: Dict[str, Any]
+        
+        :return: List of parsed podcast models
+        :rtype: List[PodcastModel]
         """
         podcasts = []
         for feed in results.get('feeds', []):
@@ -101,13 +117,14 @@ class PodcastIndexSearch:
         return podcasts
 
     def search_podcasts(self, search_query: str) -> Dict[str, Any]:
-        """Search for podcasts matching the search query and return parsed results.
-
-        Args:
-            search_query (str): The podcast search query.
-
-        Returns:
-            dict: A dictionary containing the parsed podcast information or an error message.
+        """
+        Search for podcasts matching the search query and return parsed results.
+        
+        :param search_query: The search term for finding podcasts
+        :type search_query: str
+        
+        :return: Dictionary with 'podcasts' key containing list of podcast dicts, or 'error' key with error message
+        :rtype: Dict[str, Any]
         """
         url = self.base_url + search_query
         headers = self.generate_auth_headers()

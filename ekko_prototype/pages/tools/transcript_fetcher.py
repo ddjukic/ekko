@@ -37,8 +37,8 @@ class UnifiedTranscriptFetcher:
         """
         Initialize the unified transcript fetcher.
         
-        Args:
-            config: Configuration for transcript fetching
+        :param config: Configuration for transcript fetching
+        :type config: Optional[PydanticTranscriptConfig]
         """
         self.config = config or PydanticTranscriptConfig()
         self.youtube_detector = YouTubePodcastDetector()
@@ -71,14 +71,21 @@ class UnifiedTranscriptFetcher:
         2. Try YouTube if available and preferred
         3. Fall back to Whisper transcription
         
-        Args:
-            podcast_name: Name of the podcast
-            episode_title: Title of the episode
-            episode_audio_url: URL of the audio file
-            podcast_rss_url: RSS feed URL of the podcast
-            
-        Returns:
-            TranscriptResult with transcript and metadata
+        :param podcast_name: Name of the podcast
+        :type podcast_name: str
+        :param episode_title: Title of the episode
+        :type episode_title: str
+        :param episode_audio_url: URL of the audio file
+        :type episode_audio_url: Optional[str]
+        :param podcast_rss_url: RSS feed URL of the podcast
+        :type podcast_rss_url: Optional[str]
+        
+        :return: Transcript result with text and metadata
+        :rtype: TranscriptResult
+        
+        .. note::
+           Implements intelligent fallback from free sources (YouTube) 
+           to paid sources (Whisper API) to minimize costs.
         """
         # Check cache first
         if self.config.cache_transcripts:
@@ -129,12 +136,13 @@ class UnifiedTranscriptFetcher:
         """
         Attempt to get transcript from YouTube.
         
-        Args:
-            podcast_rss_url: RSS feed URL
-            episode_title: Episode title
-            
-        Returns:
-            TranscriptResult if successful, None otherwise
+        :param podcast_rss_url: RSS feed URL
+        :type podcast_rss_url: str
+        :param episode_title: Episode title
+        :type episode_title: str
+        
+        :return: TranscriptResult if successful, None otherwise
+        :rtype: Optional[TranscriptResult]
         """
         try:
             # Check if episode is on YouTube
@@ -166,13 +174,15 @@ class UnifiedTranscriptFetcher:
         """
         Attempt to transcribe audio using Whisper.
         
-        Args:
-            audio_url: URL of the audio file
-            episode_title: Episode title
-            podcast_name: Podcast name
-            
-        Returns:
-            TranscriptResult with transcription
+        :param audio_url: URL of the audio file
+        :type audio_url: str
+        :param episode_title: Episode title
+        :type episode_title: str
+        :param podcast_name: Podcast name
+        :type podcast_name: str
+        
+        :return: TranscriptResult with transcription
+        :rtype: TranscriptResult
         """
         try:
             # Download audio file
@@ -276,13 +286,15 @@ class UnifiedTranscriptFetcher:
         """
         Transcribe using remote Whisper service.
         
-        Args:
-            audio_url: URL of the audio file
-            episode_title: Episode title
-            podcast_name: Podcast name
-            
-        Returns:
-            Path to transcript file if successful
+        :param audio_url: URL of the audio file
+        :type audio_url: str
+        :param episode_title: Episode title
+        :type episode_title: str
+        :param podcast_name: Podcast name
+        :type podcast_name: str
+        
+        :return: Path to transcript file if successful
+        :rtype: Optional[str]
         """
         import requests
         
@@ -319,12 +331,13 @@ class UnifiedTranscriptFetcher:
         """
         Check cache for existing transcript.
         
-        Args:
-            podcast_name: Podcast name
-            episode_title: Episode title
-            
-        Returns:
-            Cached TranscriptResult if found
+        :param podcast_name: Podcast name
+        :type podcast_name: str
+        :param episode_title: Episode title
+        :type episode_title: str
+        
+        :return: Cached TranscriptResult if found
+        :rtype: Optional[TranscriptResult]
         """
         if not self.config.cache_transcripts:
             return None
@@ -358,10 +371,12 @@ class UnifiedTranscriptFetcher:
         """
         Cache transcript result.
         
-        Args:
-            podcast_name: Podcast name
-            episode_title: Episode title
-            result: TranscriptResult to cache
+        :param podcast_name: Podcast name
+        :type podcast_name: str
+        :param episode_title: Episode title
+        :type episode_title: str
+        :param result: TranscriptResult to cache
+        :type result: TranscriptResult
         """
         if not self.config.cache_transcripts or not result.text:
             return
@@ -393,12 +408,13 @@ class UnifiedTranscriptFetcher:
         """
         Get cache file path for a transcript.
         
-        Args:
-            podcast_name: Podcast name
-            episode_title: Episode title
-            
-        Returns:
-            Path to cache file
+        :param podcast_name: Podcast name
+        :type podcast_name: str
+        :param episode_title: Episode title
+        :type episode_title: str
+        
+        :return: Path to cache file
+        :rtype: Path
         """
         # Sanitize names for filesystem
         safe_podcast = "".join(c if c.isalnum() or c in " -_" else "_" for c in podcast_name)
@@ -407,7 +423,9 @@ class UnifiedTranscriptFetcher:
         return self.cache_dir / safe_podcast / f"{safe_episode}.json"
     
     def _manage_cache_size(self) -> None:
-        """Manage cache size by removing old files if needed."""
+        """
+        Manage cache size by removing old files if needed.
+        """
         try:
             # Calculate total cache size
             total_size = sum(f.stat().st_size for f in self.cache_dir.rglob("*.json"))

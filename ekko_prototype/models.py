@@ -12,7 +12,16 @@ from pydantic import BaseModel, Field, HttpUrl, field_validator, EmailStr
 
 
 class TranscriptSource(str, Enum):
-    """Source of transcript."""
+    """
+    Enumeration of possible transcript sources.
+    
+    :cvar YOUTUBE_MANUAL: Manually created YouTube transcript
+    :cvar YOUTUBE_AUTO: Auto-generated YouTube transcript
+    :cvar WHISPER_LOCAL: Local Whisper model transcription
+    :cvar WHISPER_OPENAI: OpenAI Whisper API transcription
+    :cvar WHISPER_REMOTE: Remote Whisper server transcription
+    :cvar NOT_AVAILABLE: No transcript available
+    """
     YOUTUBE_MANUAL = "youtube_manual"
     YOUTUBE_AUTO = "youtube_auto"
     WHISPER_LOCAL = "whisper_local"
@@ -22,7 +31,28 @@ class TranscriptSource(str, Enum):
 
 
 class PodcastModel(BaseModel):
-    """Model for podcast information."""
+    """
+    Model for podcast information.
+    
+    :ivar id: Unique podcast identifier
+    :vartype id: int
+    :ivar title: Podcast title
+    :vartype title: str
+    :ivar url: Podcast website URL
+    :vartype url: HttpUrl
+    :ivar description: Podcast description
+    :vartype description: Optional[str]
+    :ivar author: Podcast author/creator
+    :vartype author: Optional[str]
+    :ivar image: Podcast cover image URL
+    :vartype image: Optional[HttpUrl]
+    :ivar categories: List of podcast categories
+    :vartype categories: List[str]
+    :ivar language: Primary language code
+    :vartype language: Optional[str]
+    :ivar explicit: Whether podcast contains explicit content
+    :vartype explicit: bool
+    """
     id: int = Field(..., description="Unique podcast ID")
     title: str = Field(..., description="Podcast title")
     url: HttpUrl = Field(..., description="Podcast website URL")
@@ -51,7 +81,30 @@ class PodcastModel(BaseModel):
 
 
 class EpisodeModel(BaseModel):
-    """Model for podcast episode."""
+    """
+    Model for podcast episode.
+    
+    :ivar guid: Unique episode identifier
+    :vartype guid: str
+    :ivar title: Episode title
+    :vartype title: str
+    :ivar description: Episode description
+    :vartype description: Optional[str]
+    :ivar published_date: Publication date
+    :vartype published_date: Optional[datetime]
+    :ivar duration: Episode duration in HH:MM:SS format
+    :vartype duration: Optional[str]
+    :ivar audio_url: URL to audio file
+    :vartype audio_url: Optional[HttpUrl]
+    :ivar transcript_url: URL to transcript if available
+    :vartype transcript_url: Optional[HttpUrl]
+    :ivar image: Episode image URL
+    :vartype image: Optional[HttpUrl]
+    :ivar season: Season number
+    :vartype season: Optional[int]
+    :ivar episode_number: Episode number
+    :vartype episode_number: Optional[int]
+    """
     guid: str = Field(..., description="Unique episode identifier")
     title: str = Field(..., description="Episode title")
     description: Optional[str] = Field(None, description="Episode description")
@@ -65,7 +118,15 @@ class EpisodeModel(BaseModel):
     
     @field_validator('duration')
     def validate_duration(cls, v):
-        """Validate duration format."""
+        """
+        Validate and normalize duration format to HH:MM:SS.
+        
+        :param v: Duration value to validate
+        :type v: Any
+        
+        :return: Normalized duration string in HH:MM:SS format
+        :rtype: str
+        """
         if v and ':' not in v:
             # Convert seconds to HH:MM:SS format
             try:
@@ -80,7 +141,24 @@ class EpisodeModel(BaseModel):
 
 
 class TranscriptResult(BaseModel):
-    """Model for transcript result."""
+    """
+    Model for transcript fetch results.
+    
+    :ivar text: The transcript text
+    :vartype text: Optional[str]
+    :ivar source: Source of the transcript
+    :vartype source: TranscriptSource
+    :ivar quality_score: Quality score between 0 and 1
+    :vartype quality_score: float
+    :ivar language: Detected language code
+    :vartype language: Optional[str]
+    :ivar duration_seconds: Audio duration in seconds
+    :vartype duration_seconds: Optional[int]
+    :ivar word_count: Number of words in transcript
+    :vartype word_count: Optional[int]
+    :ivar metadata: Additional metadata
+    :vartype metadata: Dict[str, Any]
+    """
     text: Optional[str] = Field(None, description="Transcript text")
     source: TranscriptSource = Field(..., description="Source of transcript")
     quality_score: float = Field(0.0, ge=0.0, le=1.0, description="Quality score (0-1)")
@@ -91,14 +169,37 @@ class TranscriptResult(BaseModel):
     
     @field_validator('word_count', mode='after')
     def calculate_word_count(cls, v, values):
-        """Calculate word count from text if not provided."""
+        """
+        Calculate word count from text if not provided.
+        
+        :param v: Current word count value
+        :type v: Optional[int]
+        :param values: Other field values
+        :type values: dict
+        
+        :return: Word count
+        :rtype: Optional[int]
+        """
         if v is None and 'text' in values and values['text']:
             return len(values['text'].split())
         return v
 
 
 class SummaryRequest(BaseModel):
-    """Model for summary request."""
+    """
+    Model for summary request parameters.
+    
+    :ivar transcript_text: Text to summarize
+    :vartype transcript_text: str
+    :ivar summary_type: Type of summary to generate
+    :vartype summary_type: str
+    :ivar max_length: Maximum summary length
+    :vartype max_length: Optional[int]
+    :ivar include_timestamps: Whether to include timestamps
+    :vartype include_timestamps: bool
+    :ivar custom_prompt: Custom prompt for summary
+    :vartype custom_prompt: Optional[str]
+    """
     transcript_text: str = Field(..., description="Transcript text to summarize")
     summary_type: str = Field("comprehensive", description="Type of summary")
     max_length: Optional[int] = Field(None, description="Maximum summary length")
@@ -117,7 +218,18 @@ class SummaryResult(BaseModel):
 
 
 class ChatMessage(BaseModel):
-    """Model for chat message."""
+    """
+    Model for a single chat message.
+    
+    :ivar role: Message role (user/assistant/system)
+    :vartype role: str
+    :ivar content: Message content
+    :vartype content: str
+    :ivar timestamp: When message was created
+    :vartype timestamp: datetime
+    :ivar metadata: Additional message metadata
+    :vartype metadata: Dict[str, Any]
+    """
     role: str = Field(..., pattern="^(user|assistant|system)$", description="Message role")
     content: str = Field(..., description="Message content")
     timestamp: datetime = Field(default_factory=datetime.now, description="Message timestamp")
@@ -134,7 +246,17 @@ class ChatSession(BaseModel):
     updated_at: datetime = Field(default_factory=datetime.now, description="Last update time")
     
     def add_message(self, role: str, content: str) -> None:
-        """Add a message to the session."""
+        """
+        Add a message to the chat session.
+        
+        :param role: Role of the message sender (user/assistant/system)
+        :type role: str
+        :param content: Content of the message
+        :type content: str
+        
+        .. note::
+           Automatically updates the session's updated_at timestamp.
+        """
         message = ChatMessage(role=role, content=content)
         self.messages.append(message)
         self.updated_at = datetime.now()
