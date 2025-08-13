@@ -1,0 +1,68 @@
+# Git
+.git
+.gitignore
+.github
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info
+dist
+build
+.venv
+venv
+env
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+.DS_Store
+
+# Project specific
+*.log
+logs/
+audio/
+transcripts/
+chroma/
+user_data.json
+.env
+.env.*
+!.env.example
+
+# Testing
+.pytest_cache
+.coverage
+htmlcov
+.tox
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Development files
+experiments/
+tests/
+*.ipynb
+.ipynb_checkpoints
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+
+# Lightning.ai specific
+.lightning
+lightning_logs/
+
+# Claude specific
+CLAUDE.md
+CLAUDE.local.md
+.claude/
+.git_commit_tracker
