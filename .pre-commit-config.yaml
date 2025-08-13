@@ -5,11 +5,12 @@ repos:
     hooks:
       # Run the linter first to catch issues
       - id: ruff
-        args: [--fix]
+        args: [--fix, --config, pyproject.toml]
         name: ruff (lint and fix)
-      # Run the formatter
-      - id: ruff-format
-        name: ruff (format)
+      # Run the formatter - temporarily disabled due to version mismatch with CI
+      # - id: ruff-format
+      #   args: [--config, pyproject.toml]
+      #   name: ruff (format)
 
   # Check for trailing whitespace and file endings
   - repo: https://github.com/pre-commit/pre-commit-hooks
