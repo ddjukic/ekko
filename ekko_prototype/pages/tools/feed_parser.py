@@ -14,7 +14,7 @@ parent_dir = os.path.dirname(
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
 
-from models import EpisodeModel
+from ekko_prototype.models import EpisodeModel
 
 
 class FeedParserStrategy(ABC):
@@ -60,7 +60,7 @@ class DefaultFeedParserStrategy(FeedParserStrategy):
             try:
                 # Extract basic fields
                 title = entry.get("title", "")
-                audio_url = entry.enclosures[0].href if entry.enclosures else None
+                audio_url = entry.enclosures[0].href if hasattr(entry, 'enclosures') and entry.enclosures else None
 
                 # Parse publication date
                 published_date = None

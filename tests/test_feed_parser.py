@@ -62,7 +62,7 @@ class TestFeedParser:
         assert ep1.title == "Episode 1: Introduction"
         assert ep1.guid == "ep1-guid"
         assert ep1.description == "This is the first episode"
-        assert ep1.audio_url == "https://example.com/ep1.mp3"
+        assert str(ep1.audio_url) == "https://example.com/ep1.mp3"
         assert ep1.duration == "00:45:30"
 
         # Check second episode (duration in seconds)
@@ -120,6 +120,7 @@ class TestFeedParser:
                     <title>Test Episode</title>
                     <guid>test-guid</guid>
                     <itunes:duration>7265</itunes:duration>
+                    <enclosure url="https://example.com/test.mp3" type="audio/mpeg"/>
                 </item>
             </channel>
         </rss>"""
