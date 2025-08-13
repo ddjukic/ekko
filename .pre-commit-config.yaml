@@ -5,7 +5,7 @@ repos:
     hooks:
       # Run the linter first to catch issues
       - id: ruff
-        args: [--fix, --exit-non-zero-on-fix]
+        args: [--fix]
         name: ruff (lint and fix)
       # Run the formatter
       - id: ruff-format
