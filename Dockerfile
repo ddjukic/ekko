@@ -2,21 +2,19 @@
 # Optimized for Google Cloud Run deployment
 
 # Stage 1: Builder stage for dependencies
-FROM python:3.13-slim as builder
+FROM python:3.13-slim AS builder
 
 # Install system dependencies required for building Python packages
 RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
     build-essential \
-    ffmpeg \
-    git \
     curl \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
-# Install uv for faster dependency management
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-ENV PATH="/root/.cargo/bin:${PATH}"
+# Install uv using pip for better compatibility
+RUN pip install --no-cache-dir uv
 
 # Set working directory
 WORKDIR /app
@@ -26,8 +24,8 @@ COPY pyproject.toml .
 COPY requirements.txt .
 
 # Create virtual environment and install dependencies with uv
-RUN uv venv
-RUN uv pip install --no-cache -r requirements.txt
+RUN python -m venv .venv
+RUN . .venv/bin/activate && uv pip install --no-cache -r requirements.txt
 
 # Stage 2: Runtime stage
 FROM python:3.13-slim
@@ -54,7 +52,7 @@ COPY --chown=ekko:ekko . .
 
 # Set environment variables
 ENV PATH="/app/.venv/bin:${PATH}"
-ENV PYTHONPATH="/app:${PYTHONPATH}"
+ENV PYTHONPATH="/app"
 ENV PYTHONUNBUFFERED=1
 ENV PORT=8080
 
