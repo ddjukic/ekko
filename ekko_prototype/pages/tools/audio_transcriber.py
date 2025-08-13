@@ -5,19 +5,20 @@ from transformers.utils import is_flash_attn_2_available
 import os
 import time
 import logging
+from typing import List, Optional, Dict, Any
 
 logger = logging.getLogger(__name__)
 # from pydub import AudioSegment  # Commented out for Python 3.13 compatibility
 # from lightning_sdk import Studio  # Only needed when running on Lightning.ai
 
-def calculate_ratio(audio_lengths_minutes, processing_times_seconds):
+def calculate_ratio(audio_lengths_minutes: List[float], processing_times_seconds: List[float]) -> float:
     """
     Calculates the average ratio of processing time to audio length for a list of audio files.
 
     :param audio_lengths_minutes: List of lengths of the audio files in minutes.
-    :type audio_lengths_minutes: list[float]
+    :type audio_lengths_minutes: List[float]
     :param processing_times_seconds: List of times taken to process the audio files in seconds.
-    :type processing_times_seconds: list[float]
+    :type processing_times_seconds: List[float]
     :return: Average ratio of processing time per second of audio.
     :rtype: float
     """
@@ -30,7 +31,7 @@ def calculate_ratio(audio_lengths_minutes, processing_times_seconds):
     average_ratio = total_ratio / len(audio_lengths_minutes)
     return average_ratio
 
-def estimate_processing_time(audio_length_hours, audio_length_minutes, audio_length_seconds, ratio):
+def estimate_processing_time(audio_length_hours: int, audio_length_minutes: int, audio_length_seconds: int, ratio: float) -> str:
     """
     Estimates the processing time based on the audio length and a given ratio, and returns the time in minutes and seconds if more than 60 seconds.
     
@@ -58,22 +59,25 @@ def estimate_processing_time(audio_length_hours, audio_length_minutes, audio_len
 class EpisodeTranscriber:
     """Transcribes podcast episodes from MP3 files."""
 
-    def __init__(self, parent_folder="./transcripts", model_id="distil-whisper/distil-large-v3"):
+    def __init__(self, parent_folder: str = "./transcripts", model_id: str = "distil-whisper/distil-large-v3") -> None:
         """
         Initialize the transcriber with the appropriate model and device settings.
 
         :param parent_folder: The directory where the transcriptions will be saved.
+        :type parent_folder: str
         :param model_id: The model ID for the transcription model.
+        :type model_id: str
         """
         self.parent_folder = parent_folder
         os.makedirs(self.parent_folder, exist_ok=True)
         self.setup_device_and_model(model_id)
 
-    def setup_device_and_model(self, model_id):
+    def setup_device_and_model(self, model_id: str) -> None:
         """
         Sets up device and model based on availability of GPU and Flash Attention 2.
 
         :param model_id: The model ID for the transcription model.
+        :type model_id: str
         """
         try:
             if is_flash_attn_2_available() and torch.cuda.is_available():
@@ -125,12 +129,14 @@ class EpisodeTranscriber:
             logger.error(f"Error setting up Whisper model: {e}")
             raise
 
-    def transcribe(self, mp3_file):
+    def transcribe(self, mp3_file: str) -> Optional[str]:
         """
         Transcribe the given MP3 file.
 
         :param mp3_file: Path to the MP3 file to transcribe.
-        :returns: Path to the transcription text file.
+        :type mp3_file: str
+        :return: Path to the transcription text file.
+        :rtype: Optional[str]
         """
         try:
             if not os.path.exists(mp3_file):
@@ -153,13 +159,16 @@ class EpisodeTranscriber:
             logger.error(f"Error during transcription: {e}")
             return None
 
-    def save(self, outputs, mp3_file):
+    def save(self, outputs: Dict[str, Any], mp3_file: str) -> str:
         """
         Save transcription to a text file.
 
         :param outputs: Transcription text from the model.
+        :type outputs: Dict[str, Any]
         :param mp3_file: Path to the MP3 file transcribed.
-        :returns: Path to the saved text file.
+        :type mp3_file: str
+        :return: Path to the saved text file.
+        :rtype: str
         """
         title = os.path.basename(mp3_file).split('.')[0]
         output_file = os.path.join(self.parent_folder, f"{title}.txt")
@@ -167,12 +176,14 @@ class EpisodeTranscriber:
             file.write(outputs['text'])
         return output_file
 
-    def upload(self, file_path):
+    def upload(self, file_path: str) -> str:
         """
         Uploads a file to a remote server.
 
         :param file_path: Local path to the file to upload.
-        :returns: Remote path of the uploaded file.
+        :type file_path: str
+        :return: Remote path of the uploaded file.
+        :rtype: str
         """
         # studio = Studio(name='fixed-moccasin-3jhs', teamspace='ekko', user='dejandukic')  # Only needed on Lightning.ai
         # its a little confusing; but the path for the file on the remote server is somehow

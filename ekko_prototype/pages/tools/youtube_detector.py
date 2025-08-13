@@ -31,9 +31,9 @@ class YouTubePodcastDetector:
     and extract transcripts when available.
     """
     
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the YouTube podcast detector."""
-        self.youtube_channels = {
+        self.youtube_channels: Dict[str, str] = {
             # Popular podcast YouTube channels
             'The Joe Rogan Experience': 'joerogan',
             'Lex Fridman Podcast': 'lexfridman',
@@ -317,7 +317,7 @@ class YouTubePodcastDetector:
     def fetch_transcript_with_timestamps(
         self,
         video_url: str
-    ) -> Optional[List[Dict]]:
+    ) -> Optional[List[Dict[str, Any]]]:
         """
         Fetch transcript with timestamps for each segment.
         
@@ -329,7 +329,7 @@ class YouTubePodcastDetector:
         :type video_url: str
         
         :return: List of dicts with 'text', 'start', and 'duration' keys
-        :rtype: Optional[List[Dict]]
+        :rtype: Optional[List[Dict[str, Any]]]
         """
         logger.warning("Transcript with timestamps not implemented with yt-dlp approach")
         return None

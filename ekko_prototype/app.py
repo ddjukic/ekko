@@ -21,6 +21,14 @@ ekko_icon = glob.glob('./**/ekko.png', recursive=True)[0]
 st.set_page_config(page_title='ekko v0.1', page_icon=ekko_icon)
 
 # Fix import paths for tools module
+# Add parent dir to path for imports when running from app.py directly
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
+
+# Fix import paths for tools module
+from typing import Optional, List, Tuple, Any
+
 from ekko_prototype.pages.tools.podcast_finder import PodcastIndexSearch
 from ekko_prototype.pages.tools.feed_parser import FeedParser
 from ekko_prototype.pages.tools.summary_creator import TranscriptSummarizer
@@ -28,7 +36,8 @@ from ekko_prototype.pages.tools.podcast_chatbot import ChatBotInterface
 # from ekko_prototype.pages.tools.audio_transcriber import calculate_ratio, estimate_processing_time
 from ekko_prototype.pages.tools.retry import retry
 from ekko_prototype.pages.tools.transcript_fetcher import UnifiedTranscriptFetcher
-from ekko_prototype.models import TranscriptConfig
+from ekko_prototype.models import TranscriptConfig, Episode
+from ekko_prototype.auth import auth
 
 # TODO:
 # improve token security handling
@@ -40,17 +49,25 @@ URL = 'https://internally-next-serval.ngrok-free.app'
 # also retry because apparently there is a bit of a 
 # filesystem latency
 @retry(num_retries=10, sleep_between=1.5)
-def find_file(filename):
+def find_file(filename: str) -> List[str]:
     # sleep for a moment to give the file system to refresh
     time.sleep(1)
     return glob.glob(f'./**/{filename}', recursive=True)
 
 # TODO:
 # improve the docstrings; handle the TOKEN properly
-def transcribe_episode_request(episode, feed_title):
+def transcribe_episode_request(episode: Episode, feed_title: str) -> Optional[str]:
     """
-    Transcribes an episode and returns the transcription file path."""
+    Transcribes an episode and returns the transcription file path.
     
+    :param episode: Episode object to transcribe
+    :type episode: Episode
+    :param feed_title: Title of the podcast feed
+    :type feed_title: str
+    
+    :return: Path to transcription file if successful, None otherwise
+    :rtype: Optional[str]
+    """
     headers = {"Authorization": f"Bearer {TOKEN}"}
 
     # Make HTTP request to ngrok server
@@ -75,8 +92,13 @@ def transcribe_episode_request(episode, feed_title):
 
 # TODO:
 # docstring
-def summarize_episode(episode_transcript):
-
+def summarize_episode(episode_transcript: str) -> None:
+    """
+    Summarize an episode transcript using GPT-4.
+    
+    :param episode_transcript: Path to transcript file
+    :type episode_transcript: str
+    """
     # Read the transcription file
     with open(episode_transcript, "r") as file:
         transcription_text = file.read()
@@ -97,18 +119,24 @@ def summarize_episode(episode_transcript):
     #     optional_text_label="[Optional] Please provide feedback on the summary:",
     # )
 
-def mock(func):
+def mock(func: Any) -> bool:
     st.write(f'would perform {func.__name__}')
     time.sleep(1)
     return True
 
-def _re_search():
+def _re_search() -> None:
     # resets the currently selected podcast
     st.session_state.pop('selected_podcast', None)
 
-def parse_time(time_string):
+def parse_time(time_string: str) -> Tuple[int, int, int]:
     """
-    Parses a time string in the format 'HH:MM:SS' and returns the total number of seconds.
+    Parses a time string in the format 'HH:MM:SS' and returns the hours, minutes, and seconds.
+    
+    :param time_string: Time string in format 'HH:MM:SS' or 'MM:SS'
+    :type time_string: str
+    
+    :return: Tuple of (hours, minutes, seconds)
+    :rtype: Tuple[int, int, int]
     """
     parsed = list(map(int, time_string.split(':')))
     if len(parsed) == 2:
@@ -122,7 +150,15 @@ def parse_time(time_string):
 
 # new feature that tells only the chat to reload, the rest stays
 @st.fragment
-def chat_with_podcast(episode_transcript, episode_title):
+def chat_with_podcast(episode_transcript: str, episode_title: str) -> None:
+    """
+    Create an interactive chat interface for a podcast episode.
+    
+    :param episode_transcript: Path to transcript file
+    :type episode_transcript: str
+    :param episode_title: Title of the episode
+    :type episode_title: str
+    """
     
     if not os.path.exists(episode_transcript):
         st.error("Episode transcript not found.")
@@ -138,18 +174,18 @@ def chat_with_podcast(episode_transcript, episode_title):
 
     chatbot.chat(episode_title)
 
-def display_episodes(episodes, num_episodes, feed_title, feed_url=None):
+def display_episodes(episodes: List[Episode], num_episodes: int, feed_title: str, feed_url: Optional[str] = None) -> None:
     """
     Displays a specified number of episodes as expandable elements with details and a 'Summarize episode' button.
 
     :param episodes: A list of episode objects containing title, published_date, and audio_url
-    :type episodes: list
+    :type episodes: List[Episode]
     :param num_episodes: The number of episodes to display
     :type num_episodes: int
     :param feed_title: The title of the podcast feed
     :type feed_title: str
     :param feed_url: The RSS feed URL of the podcast
-    :type feed_url: str
+    :type feed_url: Optional[str]
     """
     for episode in episodes[:num_episodes]:  # Only display up to num_episodes episodes
         episode_title = episode.title.strip()
@@ -162,7 +198,10 @@ def display_episodes(episodes, num_episodes, feed_title, feed_url=None):
             button_key = f"summarize_{episode.title}"
             try:
                 if st.button(f"Summarize episode", key=button_key):
-
+                    # Check rate limit before proceeding
+                    if not auth.can_transcribe():
+                        continue
+                    
                     try:
                         h,m,s = parse_time(episode.duration)
                     except Exception as e:
@@ -217,6 +256,14 @@ def display_episodes(episodes, num_episodes, feed_title, feed_url=None):
                     if result.metadata.get('youtube_url'):
                         st.info(f"YouTube URL: {result.metadata['youtube_url']}")
                     
+                    # Increment usage counter
+                    auth.increment_usage()
+                    within_limit, remaining = auth.check_rate_limit()
+                    if remaining > 0:
+                        st.info(f"You have {remaining} transcript{'s' if remaining != 1 else ''} remaining today.")
+                    else:
+                        st.warning("You've used your daily limit of transcripts!")
+                    
                     # summarize
                     with st.spinner('Summarizing episode...'):
                         try:
@@ -241,10 +288,13 @@ def display_episodes(episodes, num_episodes, feed_title, feed_url=None):
             except:
                 print('duplicate episode, skipping')
 
-def search_podcast():
+def search_podcast() -> None:
+    """
+    Main podcast search and display interface.
+    """
 
-    st.header("Search for a Podcast")
-    podcast_name = st.text_input("Enter the name of the podcast:", on_change=_re_search)
+    st.header("🔍 Search for a Podcast")
+    podcast_name = st.text_input("Enter the name of the podcast:", on_change=_re_search, placeholder="e.g., Lenny's Podcast, The Daily")
             
     if podcast_name:
 
@@ -287,10 +337,14 @@ def search_podcast():
 
 # TODO:
 # define the prompt inside the patterns with the user context 
-def update_context():
+def update_context() -> None:
+    """Update user context for personalization."""
     pass
 
-def main():
+def main() -> None:
+    """
+    Main application entry point.
+    """
 
     # transcription ratio
     audio_lengths_minutes = [13.776983333333334, 10.85]
@@ -301,11 +355,25 @@ def main():
     global ratio
     # ratio = calculate_ratio(audio_lengths_minutes, processing_times_seconds)
 
-    st.title("Ekko Prototype v0.1")
+    st.title("🎙️ ekko - AI Podcast Discovery & Summarization")
+    
+    # Show authentication form if not authenticated
+    if not auth.require_auth():
+        st.info("Sign in with your email to start discovering and summarizing podcasts!")
+        return
+    
+    # Show usage info in sidebar
+    auth.display_usage_info()
+    
+    # Main app functionality
     search_podcast()
 
-def simulate_transcription():
-    """Simulates the transcription process by sleeping for 1 second and returning the demo transcript path."""
+def simulate_transcription() -> str:
+    """Simulates the transcription process by sleeping for 1 second and returning the demo transcript path.
+    
+    :return: Path to demo transcript file
+    :rtype: str
+    """
     time.sleep(1)
     demo_transcript_path = "/home/dd/dejan_dev/ekko/audio_transcriber/demo.txt"
     # local_transcript_path = "./transcripts/demo.txt"

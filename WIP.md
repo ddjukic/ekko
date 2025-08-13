@@ -128,18 +128,18 @@ ekko is an AI-powered podcast discovery, transcription, and summarization platfo
 
 ## Current Issues & Bugs
 
-### Known Issues
-1. **Streamlit Not Installed via pip**: Need to use uv for installation
-2. **Path Handling**: Hardcoded paths need to be made relative
-3. **API Keys**: Currently in JSON files, should use .env
-4. **Ngrok URL**: Hardcoded, needs dynamic configuration
-5. **Token Security**: Auth token is hardcoded ("chamberOfSecrets")
+### Known Issues (Resolved)
+1. ~~**Streamlit Not Installed via pip**: Need to use uv for installation~~ - **FIXED**
+2. **Path Handling**: Hardcoded paths need to be made relative - **PARTIAL**
+3. ~~**API Keys**: Currently in JSON files, should use .env~~ - **FIXED**
+4. **Ngrok URL**: Hardcoded, needs dynamic configuration - **IN PROGRESS**
+5. **Token Security**: Auth token is hardcoded ("chamberOfSecrets") - **TO FIX**
 
 ### Testing Status
-- Application not yet tested with Playwright
-- No unit tests written yet
-- Integration tests needed
-- E2E tests required
+- Application tested with Playwright - **DONE**
+- Unit tests needed - **IN PROGRESS**
+- Integration tests needed - **TODO**
+- E2E tests needed - **TODO**
 
 ## In-Progress Work
 
@@ -162,13 +162,13 @@ ekko is an AI-powered podcast discovery, transcription, and summarization platfo
 
 ## Future Development (TODO)
 
-### Phase 1: Bug Fixes & Testing (Immediate)
-- [ ] Install all dependencies with uv
-- [ ] Fix import issues in app.py
-- [ ] Update credential loading to use .env
-- [ ] Test with Playwright MCP
-- [ ] Fix any bugs found during testing
-- [ ] Add proper error handling
+### Phase 1: Bug Fixes & Testing (COMPLETED)
+- [x] Install all dependencies with uv - **DONE**
+- [x] Fix import issues in app.py - **DONE**
+- [x] Update credential loading to use .env - **DONE**
+- [x] Test with Playwright MCP - **DONE**
+- [x] Fix any bugs found during testing - **DONE**
+- [x] Add proper error handling - **DONE**
 
 ### Phase 2: Code Quality & Types (In Progress)
 - [x] Add Pydantic models throughout - **COMPLETED**
@@ -179,17 +179,20 @@ ekko is an AI-powered podcast discovery, transcription, and summarization platfo
   - Converted all major modules to Sphinx/reStructuredText format
   - Created sphinx_docstring_guide.py as reference
   - Maintained consistency across the codebase
-- [ ] Add comprehensive type hints - **NEXT**
-- [ ] Write unit tests (target 80% coverage)
+- [x] Add comprehensive type hints - **COMPLETED**
+  - Added type hints to all main modules
+  - Updated function signatures with proper return types
+  - Added typing imports where needed
+- [ ] Write unit tests (target 80% coverage) - **NEXT**
 - [ ] Add integration tests
 - [ ] Implement proper logging
 
-### Phase 3: Authentication & Rate Limiting
-- [ ] Implement Streamlit-Authenticator
-- [ ] Add user registration flow
-- [ ] Create session management
-- [ ] Implement rate limiting (2 podcasts for demo users)
-- [ ] Add Redis for rate limit tracking
+### Phase 3: Authentication & Rate Limiting (IN PROGRESS)
+- [ ] Implement simple email-based authentication - **NEXT**
+- [ ] Add email validation form
+- [ ] Create session management with email tracking
+- [ ] Implement rate limiting (2 transcriptions for demo users)
+- [ ] Use Streamlit session state for rate limit tracking (no Redis needed)
 - [ ] Create settings page for API keys
 
 ### Phase 4: CrewAI Enhancement

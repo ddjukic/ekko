@@ -1,6 +1,7 @@
 import logging
 import os
 import requests
+from typing import Optional
 
 class EpisodeDownloader:
     """
@@ -16,7 +17,7 @@ class EpisodeDownloader:
         self.logger = logging.getLogger(__name__)
         self.verbose = verbose
 
-    def download_single_episode(self, url, title, feed_title):
+    def download_single_episode(self, url: str, title: str, feed_title: str) -> Optional[str]:
         """
         Download a single episode with streaming and progress tracking.
 
@@ -27,8 +28,8 @@ class EpisodeDownloader:
         :param feed_title: The title of the podcast feed
         :type feed_title: str
 
-        :return: The full path of the downloaded episode
-        :rtype: str
+        :return: The full path of the downloaded episode or None if failed
+        :rtype: Optional[str]
 
         .. note::
            Creates an MP3 file in the directory ./audio/feed_title/ named after the episode title.
@@ -100,7 +101,7 @@ class EpisodeDownloader:
                 os.remove(file_path)
             return None
 
-    def _create_episode_dir(self, feed_title):
+    def _create_episode_dir(self, feed_title: str) -> str:
         """
         Create a directory for a podcast feed.
 
