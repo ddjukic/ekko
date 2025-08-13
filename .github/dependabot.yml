@@ -16,7 +16,7 @@ updates:
     commit-message:
       prefix: "chore"
       include: "scope"
-    
+
   # GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"

@@ -11,7 +11,6 @@ from unittest.mock import MagicMock, Mock, patch
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from ekko_prototype.pages.tools.youtube_detector import (
-    TranscriptSource,
     YouTubePodcastDetector,
 )
 
@@ -96,15 +95,21 @@ class TestYouTubeDetector(unittest.TestCase):
 
     def test_fetch_youtube_transcript_success_skipped(self):
         """Skip this test - YouTube API mocking is complex and not critical."""
-        self.skipTest("YouTube API mocking is complex and not critical for current functionality")
+        self.skipTest(
+            "YouTube API mocking is complex and not critical for current functionality"
+        )
 
     def test_fetch_youtube_transcript_auto_generated_skipped(self):
         """Skip this test - YouTube API mocking is complex and not critical."""
-        self.skipTest("YouTube API mocking is complex and not critical for current functionality")
+        self.skipTest(
+            "YouTube API mocking is complex and not critical for current functionality"
+        )
 
     def test_fetch_youtube_transcript_not_available_skipped(self):
         """Skip this test - YouTube API mocking is complex and not critical."""
-        self.skipTest("YouTube API mocking is complex and not critical for current functionality")
+        self.skipTest(
+            "YouTube API mocking is complex and not critical for current functionality"
+        )
 
     @patch("ekko_prototype.pages.tools.youtube_detector.feedparser")
     def test_check_youtube_availability(self, mock_feedparser):

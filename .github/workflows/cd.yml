@@ -16,32 +16,32 @@ jobs:
     name: Deploy to Cloud Run
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
           service_account_key: ${{ secrets.GCP_SA_KEY }}
           export_default_credentials: true
-      
+
       - name: Configure Docker for GCR
         run: |
           gcloud auth configure-docker
-      
+
       - name: Build Docker image
         run: |
           docker build -t ${{ env.IMAGE }}:${{ github.sha }} .
           docker tag ${{ env.IMAGE }}:${{ github.sha }} ${{ env.IMAGE }}:latest
-      
+
       - name: Push to Google Container Registry
         run: |
           docker push ${{ env.IMAGE }}:${{ github.sha }}
           docker push ${{ env.IMAGE }}:latest
-      
+
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy ${{ env.SERVICE_NAME }} \
@@ -60,7 +60,7 @@ jobs:
             --set-secrets="PODCASTINDEX_API_KEY=podcastindex-api-key:latest" \
             --set-secrets="PODCASTINDEX_API_SECRET=podcastindex-api-secret:latest" \
             --set-secrets="YOUTUBE_API_KEY=youtube-api-key:latest"
-      
+
       - name: Get service URL
         run: |
           SERVICE_URL=$(gcloud run services describe ${{ env.SERVICE_NAME }} \
@@ -68,12 +68,12 @@ jobs:
             --format 'value(status.url)')
           echo "Service deployed to: $SERVICE_URL"
           echo "SERVICE_URL=$SERVICE_URL" >> $GITHUB_ENV
-      
+
       - name: Smoke test
         run: |
           sleep 10
           curl -f ${{ env.SERVICE_URL }}/_stcore/health || exit 1
-      
+
       - name: Create deployment summary
         run: |
           echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY

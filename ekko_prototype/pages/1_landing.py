@@ -31,10 +31,10 @@ def welcome():
 
     st.markdown("""
                 ### But first, let's start with some feedback 🤓!
-                
+
                 - We would like to get to know you, and to understand if ekko (and what it aims to become), could be of value to you and others like you.
                 - The feedback form will take about 3 minutes to complete, we highly appreciate your time and participation! 🙏🏽
-                - _Note_: 
+                - _Note_:
                     - For the best experience, please use a computer for testing out the protoype.
                     - If you are using a mobile device, try not letting it go to sleep while you are interacting with the prototype.
                 """)

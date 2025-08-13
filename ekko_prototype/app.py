@@ -16,7 +16,8 @@ if parent_dir not in sys.path:
 
 from ekko_prototype.auth import auth
 from ekko_prototype.logging_config import get_logger, setup_streamlit_logging
-from ekko_prototype.models import EpisodeModel as Episode, TranscriptConfig
+from ekko_prototype.models import EpisodeModel as Episode
+from ekko_prototype.models import TranscriptConfig
 from ekko_prototype.pages.tools.feed_parser import FeedParser
 from ekko_prototype.pages.tools.podcast_chatbot import ChatBotInterface
 from ekko_prototype.pages.tools.podcast_finder import PodcastIndexSearch

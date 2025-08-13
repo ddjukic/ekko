@@ -145,7 +145,7 @@ Attributes:     -> :ivar name: description
                    :vartype name: type
 
 Example:        -> :Example:
-                   
+
                    >>> code here
 
 Note:           -> .. note::

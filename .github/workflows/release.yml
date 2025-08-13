@@ -13,26 +13,26 @@ jobs:
   release:
     name: Create Release
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      
+
       - name: Install dependencies
         run: |
           pip install gitchangelog pystache
-      
+
       - name: Generate changelog
         run: |
           gitchangelog > CHANGELOG.md || echo "# Changelog\n\n## ${{ github.ref_name }}\n\n- Release ${{ github.ref_name }}" > CHANGELOG.md
-      
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
@@ -42,7 +42,7 @@ jobs:
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:

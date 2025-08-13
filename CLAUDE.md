@@ -49,7 +49,7 @@ pip install -r requirements.txt
 
 # Key dependencies include:
 # - streamlit, streamlit-feedback, streamlit-pills
-# - openai, langchain, chromadb (for AI/chat features)  
+# - openai, langchain, chromadb (for AI/chat features)
 # - torch, transformers (for local Whisper model)
 # - feedparser, requests (for RSS/podcast fetching)
 ```

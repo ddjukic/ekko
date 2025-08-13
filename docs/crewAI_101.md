@@ -90,7 +90,7 @@ load_dotenv()
 
 class PodcastTranscriptCrew:
     """CrewAI implementation for intelligent transcript fetching."""
-    
+
     def __init__(self):
         self.llm = ChatOpenAI(
             model="gpt-4",
@@ -99,10 +99,10 @@ class PodcastTranscriptCrew:
         )
         self._setup_agents()
         self._setup_tools()
-    
+
     def _setup_agents(self):
         """Initialize specialized agents."""
-        
+
         # YouTube Search Agent
         self.youtube_searcher = Agent(
             role='YouTube Podcast Finder',
@@ -115,7 +115,7 @@ class PodcastTranscriptCrew:
             tools=[],  # Add YouTube search tools
             max_iter=3
         )
-        
+
         # Transcript Extractor Agent
         self.transcript_extractor = Agent(
             role='Transcript Extraction Specialist',
@@ -128,7 +128,7 @@ class PodcastTranscriptCrew:
             tools=[],  # Add transcript extraction tools
             max_iter=5
         )
-        
+
         # Audio Transcription Agent
         self.audio_transcriber = Agent(
             role='Audio Transcription Expert',
@@ -141,7 +141,7 @@ class PodcastTranscriptCrew:
             tools=[],  # Add Whisper transcription tools
             max_iter=3
         )
-        
+
         # Quality Validator Agent
         self.quality_validator = Agent(
             role='Transcript Quality Assurance',
@@ -153,19 +153,19 @@ class PodcastTranscriptCrew:
             llm=self.llm,
             max_iter=2
         )
-    
+
     def _setup_tools(self):
         """Set up tools for agents."""
         from crewai_tools import SerperDevTool, WebsiteSearchTool
-        
+
         # Search tool for YouTube
         self.search_tool = SerperDevTool(
             api_key=os.getenv("SERPER_API_KEY")
         )
-        
+
         # Custom tools can be added here
         self.youtube_searcher.tools = [self.search_tool]
-    
+
     def fetch_transcript(
         self,
         podcast_name: str,
@@ -174,28 +174,28 @@ class PodcastTranscriptCrew:
     ) -> Dict[str, Any]:
         """
         Orchestrate agents to fetch transcript.
-        
+
         Args:
             podcast_name: Name of the podcast
             episode_title: Title of the episode
             audio_url: Fallback audio URL if YouTube not available
-            
+
         Returns:
             Dict with transcript and metadata
         """
-        
+
         # Task 1: Search for episode on YouTube
         search_task = Task(
             description=f"""Search for the podcast episode on YouTube:
             Podcast: {podcast_name}
             Episode: {episode_title}
-            
+
             Find the official upload if available.
             Return the YouTube URL if found.""",
             expected_output="YouTube URL or 'not found'",
             agent=self.youtube_searcher
         )
-        
+
         # Task 2: Extract transcript from YouTube
         extract_task = Task(
             description="""If YouTube URL is found, extract the transcript.
@@ -204,7 +204,7 @@ class PodcastTranscriptCrew:
             expected_output="Transcript text or 'not available'",
             agent=self.transcript_extractor
         )
-        
+
         # Task 3: Fallback to audio transcription
         transcribe_task = Task(
             description=f"""If YouTube transcript is not available,
@@ -213,7 +213,7 @@ class PodcastTranscriptCrew:
             expected_output="Transcribed text",
             agent=self.audio_transcriber
         )
-        
+
         # Task 4: Validate quality
         validate_task = Task(
             description="""Validate the transcript quality.
@@ -222,12 +222,12 @@ class PodcastTranscriptCrew:
             - Proper formatting
             - Speaker identification (if available)
             - Timestamp markers
-            
+
             Clean up any issues found.""",
             expected_output="Validated and cleaned transcript",
             agent=self.quality_validator
         )
-        
+
         # Create crew with conditional workflow
         crew = Crew(
             agents=[
@@ -240,23 +240,23 @@ class PodcastTranscriptCrew:
             process=Process.sequential,
             verbose=True
         )
-        
+
         # Execute crew
         result = crew.kickoff()
-        
+
         return {
             'transcript': result,
             'source': self._determine_source(result),
             'quality_score': self._calculate_quality_score(result)
         }
-    
+
     def _determine_source(self, result: str) -> str:
         """Determine the source of the transcript."""
         # Logic to determine if from YouTube or Whisper
         if "YouTube" in result:
             return "YouTube"
         return "Whisper"
-    
+
     def _calculate_quality_score(self, transcript: str) -> float:
         """Calculate quality score of transcript."""
         # Simple quality scoring logic
@@ -273,15 +273,15 @@ class PodcastTranscriptCrew:
 ```python
 class SummaryCrew:
     """CrewAI implementation for podcast summarization."""
-    
+
     def __init__(self, summary_style: str = "comprehensive"):
         self.summary_style = summary_style
         self.llm = ChatOpenAI(model="gpt-4", temperature=0.5)
         self._setup_agents()
-    
+
     def _setup_agents(self):
         """Initialize summary generation agents."""
-        
+
         # Content Analyzer
         self.analyzer = Agent(
             role='Content Analysis Expert',
@@ -291,7 +291,7 @@ class SummaryCrew:
             verbose=True,
             llm=self.llm
         )
-        
+
         # Summary Writer
         self.writer = Agent(
             role='Summary Writing Specialist',
@@ -301,7 +301,7 @@ class SummaryCrew:
             verbose=True,
             llm=self.llm
         )
-        
+
         # Fact Checker
         self.fact_checker = Agent(
             role='Fact Verification Expert',
@@ -311,10 +311,10 @@ class SummaryCrew:
             verbose=True,
             llm=self.llm
         )
-    
+
     def generate_summary(self, transcript: str) -> Dict[str, Any]:
         """Generate comprehensive podcast summary."""
-        
+
         # Task 1: Analyze content
         analysis_task = Task(
             description=f"""Analyze this podcast transcript and extract:
@@ -322,12 +322,12 @@ class SummaryCrew:
             - Key insights and takeaways
             - Notable quotes
             - Action items or advice
-            
+
             Transcript: {transcript[:3000]}...""",  # Truncate for prompt
             expected_output="Structured analysis with bullet points",
             agent=self.analyzer
         )
-        
+
         # Task 2: Write summary
         writing_task = Task(
             description=f"""Based on the analysis, write a {self.summary_style} summary.
@@ -336,12 +336,12 @@ class SummaryCrew:
             - Main topics with key points
             - Notable insights
             - Actionable takeaways
-            
+
             Make it engaging and easy to scan.""",
             expected_output="Well-formatted summary",
             agent=self.writer
         )
-        
+
         # Task 3: Verify facts
         verification_task = Task(
             description="""Review the summary for accuracy.
@@ -350,7 +350,7 @@ class SummaryCrew:
             expected_output="Verified summary with accuracy notes",
             agent=self.fact_checker
         )
-        
+
         # Create and execute crew
         crew = Crew(
             agents=[self.analyzer, self.writer, self.fact_checker],
@@ -358,15 +358,15 @@ class SummaryCrew:
             process=Process.sequential,
             verbose=True
         )
-        
+
         result = crew.kickoff()
-        
+
         return {
             'summary': result,
             'word_count': len(result.split()),
             'reading_time': self._calculate_reading_time(result)
         }
-    
+
     def _calculate_reading_time(self, text: str) -> int:
         """Calculate reading time in minutes."""
         words_per_minute = 200
@@ -389,7 +389,7 @@ class YouTubeSearchTool(BaseTool):
     name: str = "YouTube Search"
     description: str = "Search for videos on YouTube"
     args_schema: Type[BaseModel] = YouTubeSearchInput
-    
+
     def _run(self, query: str) -> str:
         """Execute YouTube search."""
         # Implementation using youtube-transcript-api or yt-dlp
@@ -406,7 +406,7 @@ class WhisperTranscriptionTool(BaseTool):
     name: str = "Whisper Transcription"
     description: str = "Transcribe audio using Whisper"
     args_schema: Type[BaseModel] = WhisperTranscriptionInput
-    
+
     def _run(self, audio_url: str) -> str:
         """Execute Whisper transcription."""
         from ekko_prototype.pages.tools.audio_transcriber import EpisodeTranscriber
@@ -473,11 +473,11 @@ from typing import Optional
 
 class TranscriptOrchestrator:
     """Main orchestrator for transcript operations."""
-    
+
     def __init__(self):
         self.transcript_crew = PodcastTranscriptCrew()
         self.summary_crew = SummaryCrew()
-    
+
     def process_episode(
         self,
         podcast_name: str,
@@ -493,13 +493,13 @@ class TranscriptOrchestrator:
             episode_title=episode_title,
             audio_url=audio_url
         )
-        
+
         # Step 2: Generate summary
         if transcript_result['transcript']:
             summary_result = self.summary_crew.generate_summary(
                 transcript=transcript_result['transcript']
             )
-            
+
             return {
                 'transcript': transcript_result['transcript'],
                 'transcript_source': transcript_result['source'],
@@ -507,7 +507,7 @@ class TranscriptOrchestrator:
                 'reading_time': summary_result['reading_time'],
                 'quality_score': transcript_result['quality_score']
             }
-        
+
         return {'error': 'Could not fetch transcript'}
 ```
 
@@ -559,7 +559,7 @@ def test_transcript_crew():
         episode_title="Episode 1",
         audio_url="https://example.com/audio.mp3"
     )
-    
+
     assert 'transcript' in result
     assert 'source' in result
     print(f"Source: {result['source']}")
@@ -568,10 +568,10 @@ def test_transcript_crew():
 def test_summary_generation():
     """Test summary generation crew."""
     crew = SummaryCrew(summary_style="concise")
-    
+
     sample_transcript = "This is a test transcript..."
     result = crew.generate_summary(sample_transcript)
-    
+
     assert 'summary' in result
     assert result['word_count'] > 0
     print(f"Summary: {result['summary'][:200]}...")

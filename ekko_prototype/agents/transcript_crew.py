@@ -134,13 +134,13 @@ class TranscriptCrew:
             Search for the following podcast episode on YouTube:
             - Podcast: {podcast_name}
             - Episode: {episode_title}
-            
+
             Your objectives:
             1. Search for the episode using various search strategies
             2. Identify if there's an official upload from the podcast channel
             3. Verify the found video matches the requested episode
             4. Return the YouTube URL if found, or 'not found' if unavailable
-            
+
             Consider variations in naming, episode numbers, and guest names.
             """,
             expected_output="YouTube URL of the episode or 'not found'",
@@ -151,14 +151,14 @@ class TranscriptCrew:
         extract_task = Task(
             description="""
             If a YouTube URL was found in the previous task, extract the transcript.
-            
+
             Your objectives:
             1. Attempt to get manually-created transcripts first
             2. Fall back to auto-generated transcripts if manual ones aren't available
             3. Verify the transcript is complete and not truncated
             4. Format the transcript for readability
             5. Return the full transcript text or 'not available' if extraction fails
-            
+
             Quality check: Ensure the transcript has reasonable length (>500 words for a typical episode).
             """,
             expected_output="Complete transcript text or 'not available'",
@@ -169,14 +169,14 @@ class TranscriptCrew:
         transcribe_task = Task(
             description=f"""
             If YouTube transcript is not available, transcribe the audio from: {episode_audio_url}
-            
+
             Your objectives:
             1. Download the audio file efficiently
             2. Use Whisper AI for transcription
             3. Choose appropriate model based on audio length
             4. Ensure complete transcription without truncation
             5. Return the transcribed text
-            
+
             Use remote Whisper service if available, otherwise use local Whisper.
             """,
             expected_output="Transcribed text from audio",
@@ -187,7 +187,7 @@ class TranscriptCrew:
         validate_task = Task(
             description="""
             Validate and enhance the transcript quality from previous tasks.
-            
+
             Your objectives:
             1. Check for completeness (no truncation or missing sections)
             2. Verify proper sentence structure and punctuation
@@ -195,13 +195,13 @@ class TranscriptCrew:
             4. Add paragraph breaks for better readability
             5. Check for speaker identification if available
             6. Ensure timestamps are properly formatted if present
-            
+
             Quality metrics to verify:
             - Minimum word count appropriate for episode length
             - Proper capitalization and punctuation
             - No excessive repetition or artifacts
             - Clear paragraph organization
-            
+
             Return the validated and cleaned transcript.
             """,
             expected_output="Validated and enhanced transcript with quality report",

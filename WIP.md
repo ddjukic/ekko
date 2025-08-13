@@ -12,7 +12,7 @@ ekko is an AI-powered podcast discovery, transcription, and summarization platfo
 - **Package Manager Migration**: Migrated from pip to uv for faster, more reliable dependency management
 - **Python Version**: Set to Python 3.13 for latest features and performance
 - **Project Structure**: Organized into clear modules (ekko_prototype, rss_parser, agents)
-- **Configuration**: 
+- **Configuration**:
   - Created comprehensive pyproject.toml
   - Added .env.example for environment variables
   - Updated .gitignore for professional coverage
@@ -25,7 +25,7 @@ ekko is an AI-powered podcast discovery, transcription, and summarization platfo
   - Added pre-commit hooks for automated quality checks
   - **NEW**: Implemented Pydantic v2 models throughout application
 - **Testing Framework**: Configured pytest with coverage reporting
-- **Documentation**: 
+- **Documentation**:
   - Created CLAUDE.md for AI assistant guidance
   - Added comprehensive README.md
   - Created reference guides (how_to_uv.md, yt_dlp_guide.md, crewAI_101.md)
@@ -48,7 +48,7 @@ ekko is an AI-powered podcast discovery, transcription, and summarization platfo
   - Extracts video IDs from URLs
   - Fetches transcripts (manual preferred over auto-generated)
   - Quality scoring for transcripts
-  
+
 - **Unified Transcript Fetcher** (`transcript_fetcher.py`):
   - Intelligent fallback strategy (YouTube → Whisper)
   - Caching system for transcripts

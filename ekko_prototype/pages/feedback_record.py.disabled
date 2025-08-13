@@ -42,7 +42,7 @@ def validate_email(email):
         return True
     else:
         return False
-    
+
 def render_question_single(question, answers):
     st.markdown(f"##### {question}")
     # kick out the 'Other' option as it is handled separately
@@ -59,7 +59,7 @@ def render_multiple_choice(question, answers):
 
 def render_question_scale(question, answers):
     st.markdown(f"##### {question}")
-    choice = st.slider('placeholder', min_value=int(answers[0]), max_value=int(answers[-1]), 
+    choice = st.slider('placeholder', min_value=int(answers[0]), max_value=int(answers[-1]),
                        value=5, key=f'{question}_slider', step=1, label_visibility='collapsed')
     return choice
 
@@ -83,7 +83,7 @@ def render_email_input():
             # save email to the state
             st.session_state['email'] = email
             st.rerun()
-            
+
 def render_other_input(question):
     other_text = st.text_input("", key=f'{question}_other', label_visibility='collapsed', placeholder="Other (please specify)")
     return other_text
@@ -96,7 +96,7 @@ def record_feedback(question, choice, followup=False):
     # do not increment the counter if this is a followup question
     if not followup:
         st.session_state['question_counter'] += 1
-            
+
 def dump_state():
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     timestamp_friendly = timestamp.replace(" ", "_").replace(":", "-")
@@ -147,7 +147,7 @@ while st.session_state['question_counter'] < len(questions):
         and st.session_state['Would you be willing to answer more of our questions or do a live feedback session?_feedback'][0] == "Yes! 🎉" \
         and 'email' not in st.session_state:
             render_email_input()
-            st.stop()       
+            st.stop()
 
     if question in audience_questions:
         st.success('#### Almost there, just a few more questions about you! 🙏🏽')
@@ -195,9 +195,9 @@ while st.session_state['question_counter'] < len(questions):
 
                 question = "What improvements would you suggest for the summary to get a better score?"
                 answers = ["the structure (sections)", "the tone", "the length", "too much detail", "not enough detail", "accuracy", "I'd like to listen to the quotes", "Other (please specify)"]
-                
+
                 with st.form(f'{previous_question}_improve'):
-                    choice = render_multiple_choice(question, answers) 
+                    choice = render_multiple_choice(question, answers)
                     other_text = render_other_input(question)
                     if other_text:
                         choice_other = f"Other: {other_text}"
@@ -206,14 +206,14 @@ while st.session_state['question_counter'] < len(questions):
                     submit_button = st.form_submit_button(label='Save')
 
                     if submit_button:
-                        
+
                         choices = [elem for elem in [choice, other_text] if len(elem) and elem is not None]
 
                         record_feedback(question, choices, followup=True)
                         st.rerun()
                     else:
                         break
-        
+
         # new followup question from Marko regarding the reasons for content overload
         ## more complex branching
         # struggle_a = 'How often do you find it challenging to filter out irrelevant or low-quality content to find what truly interests you?'
@@ -221,8 +221,8 @@ while st.session_state['question_counter'] < len(questions):
         # struggle_b = 'Do you experience FOMO (fear of missing out) when trying to keep up with the latest news and trends?'
         # struggle_b_triggers = set(["Several times a week - I often feel like I'm behind.", "About once a week - Mainly with certain topics."])
         # struggle_followup_question = 'What are the main reasons you find it challenging to deal with the content overload?'
-        
-        
+
+
         # if f'{struggle_a}_feedback' in st.session_state \
         # and f'{struggle_b}_feedback' in st.session_state \
         # and set(st.session_state.get(f'{struggle_a}_feedback', set())).intersection(struggle_a_triggers) \
@@ -233,9 +233,9 @@ while st.session_state['question_counter'] < len(questions):
         followup_struggle_question = 'What are the main reasons you find it challenging to deal with the content overload?'
         if st.session_state.get(f'{struggle_question}_feedback', [0])[0] == 'Yes'\
         and f'{followup_struggle_question}_feedback' not in st.session_state:
-            
+
             question = followup_struggle_question
-            
+
             answers = [
                             "Time Constraints: Busy schedules can make it difficult to find time for content consumption.",
                             "Efficient Tools: Access to efficient tools for content consumption is often lacking.",
@@ -245,7 +245,7 @@ while st.session_state['question_counter'] < len(questions):
                         ]
 
             with st.form(f'followup_struggle'):
-                choice = render_multiple_choice(question, answers) 
+                choice = render_multiple_choice(question, answers)
                 other_text = render_other_input(question)
                 if other_text:
                     choice_other = f"Other: {other_text}"
@@ -254,20 +254,20 @@ while st.session_state['question_counter'] < len(questions):
                 submit_button = st.form_submit_button(label='Save')
 
                 if submit_button:
-                    
+
                     choices = [elem for elem in [choice, other_text] if len(elem) and elem is not None]
 
                     record_feedback(question, choices, followup=True)
                     st.rerun()
                 else:
                     break
-    
+
     ################################################################
     ### QUESTION TYPE SELECTION BRANCHING
     ################################################################
 
     with st.form('_form'):
-        if question in ['Where do you get most of your content/news? (Select all that apply)', 
+        if question in ['Where do you get most of your content/news? (Select all that apply)',
                         'Why is it important for you to keep up with the latest news and trends?',
                         "You've experienced the podcast summarization functionality. Which other media sources would you like to be able to summarize in a similar way and keep in your 'digital brain'?"]:
             choice = render_multiple_choice(question, answers)
@@ -289,12 +289,12 @@ while st.session_state['question_counter'] < len(questions):
             else:
                 choice_other = None
         else:
-            choice = render_question_single(question, answers)    
+            choice = render_question_single(question, answers)
 
         submit_button = st.form_submit_button(label='Save')
 
         if submit_button:
-                
+
             # choices = [choice]
             # if f'{question}_other' in st.session_state and st.session_state[f'{question}_other']:
                 # choices.append(choice_other)

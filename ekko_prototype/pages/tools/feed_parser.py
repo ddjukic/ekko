@@ -60,7 +60,11 @@ class DefaultFeedParserStrategy(FeedParserStrategy):
             try:
                 # Extract basic fields
                 title = entry.get("title", "")
-                audio_url = entry.enclosures[0].href if hasattr(entry, 'enclosures') and entry.enclosures else None
+                audio_url = (
+                    entry.enclosures[0].href
+                    if hasattr(entry, "enclosures") and entry.enclosures
+                    else None
+                )
 
                 # Parse publication date
                 published_date = None
