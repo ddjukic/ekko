@@ -194,20 +194,21 @@ class OpenAIWhisperTranscriber:
         temperature: float = 0.0
     ) -> Optional[str]:
         """
-        Transcribe large files by chunking them.
+        Handle large files that exceed OpenAI's 25MB limit.
         
-        Note: This is a simplified implementation. In production, you'd want
-        to use proper audio processing libraries to split at silence points.
+        For now, we'll return None and log an error since proper audio chunking
+        requires additional dependencies like pydub and ffmpeg.
         """
-        logger.warning("Large file chunking not fully implemented. Attempting direct upload.")
+        file_size_mb = os.path.getsize(audio_file_path) / (1024 * 1024)
+        logger.error(f"File size {file_size_mb:.1f}MB exceeds OpenAI's 25MB limit")
+        logger.error("Audio file is too large for OpenAI Whisper API. Please use a shorter episode or enable local transcription.")
         
-        # For now, just try to transcribe directly and let the API handle it
-        # OpenAI API actually supports files up to 25MB
-        try:
-            return self.transcribe(audio_file_path, language, prompt, temperature)
-        except Exception as e:
-            logger.error(f"Failed to transcribe large file: {e}")
-            return None
+        # Return None to indicate failure
+        # In a production system, you would:
+        # 1. Use pydub to split the audio into <25MB chunks
+        # 2. Transcribe each chunk
+        # 3. Concatenate the results
+        return None
     
     def _should_chunk_file(self, file_path: str) -> bool:
         """Check if file needs to be chunked."""

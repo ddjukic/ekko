@@ -12,8 +12,6 @@ from dataclasses import dataclass
 from enum import Enum
 
 import feedparser
-from youtube_transcript_api import YouTubeTranscriptApi
-from youtube_transcript_api.formatters import TextFormatter
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +61,6 @@ class YouTubePodcastDetector:
             "Lenny's Podcast": "Lenny's Podcast",
             "Lennybot": "Lenny's Podcast",
         }
-        self.formatter = TextFormatter()
     
     def extract_video_id(self, url: str) -> Optional[str]:
         """
@@ -177,7 +174,7 @@ class YouTubePodcastDetector:
         languages: List[str] = None
     ) -> TranscriptResult:
         """
-        Fetch transcript from YouTube video.
+        Fetch transcript from YouTube video using yt-dlp.
         
         Args:
             video_url: YouTube video URL
@@ -186,6 +183,10 @@ class YouTubePodcastDetector:
         Returns:
             TranscriptResult with transcript and metadata
         """
+        import yt_dlp
+        import tempfile
+        import os
+        
         if languages is None:
             languages = ['en']
         
@@ -200,59 +201,85 @@ class YouTubePodcastDetector:
                     metadata={'error': 'Invalid YouTube URL'}
                 )
             
-            # Get transcript list
-            transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
-            
-            # Try to find manual transcript first
-            transcript = None
-            source = TranscriptSource.NOT_AVAILABLE
-            
-            try:
-                transcript = transcript_list.find_manually_created_transcript(languages)
-                source = TranscriptSource.YOUTUBE_MANUAL
-                quality_score = 1.0
-                logger.info(f"Found manual transcript for video {video_id}")
-            except Exception:
-                # Fall back to auto-generated
-                try:
-                    transcript = transcript_list.find_generated_transcript(languages)
-                    source = TranscriptSource.YOUTUBE_AUTO
-                    quality_score = 0.8
-                    logger.info(f"Found auto-generated transcript for video {video_id}")
-                except Exception as e:
-                    logger.error(f"No transcript available for video {video_id}: {e}")
+            # Create temporary directory for subtitle files
+            with tempfile.TemporaryDirectory() as temp_dir:
+                subtitle_file = os.path.join(temp_dir, f"{video_id}")
+                
+                # Configure yt-dlp to download subtitles only
+                ydl_opts = {
+                    'quiet': True,
+                    'no_warnings': True,
+                    'skip_download': True,  # Don't download video
+                    'writesubtitles': True,  # Write subtitles to file
+                    'writeautomaticsub': True,  # Also get auto-generated if no manual
+                    'subtitleslangs': languages,  # Languages to download
+                    'subtitlesformat': 'vtt',  # VTT format is easier to parse
+                    'outtmpl': subtitle_file,  # Output template
+                    'logger': logger,
+                }
+                
+                logger.info(f"Fetching YouTube transcript for video {video_id}")
+                
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    info = ydl.extract_info(video_url, download=True)
+                    
+                    # Check what subtitle files were created
+                    subtitle_files = []
+                    source = TranscriptSource.NOT_AVAILABLE
+                    quality_score = 0.0
+                    
+                    # Check for manual subtitles first
+                    for lang in languages:
+                        manual_file = f"{subtitle_file}.{lang}.vtt"
+                        if os.path.exists(manual_file):
+                            subtitle_files.append(manual_file)
+                            source = TranscriptSource.YOUTUBE_MANUAL
+                            quality_score = 1.0
+                            logger.info(f"Found manual subtitles for language: {lang}")
+                            break
+                    
+                    # If no manual, check for auto-generated
+                    if not subtitle_files:
+                        for lang in languages:
+                            auto_file = f"{subtitle_file}.{lang}.vtt"
+                            if os.path.exists(auto_file):
+                                subtitle_files.append(auto_file)
+                                source = TranscriptSource.YOUTUBE_AUTO
+                                quality_score = 0.8
+                                logger.info(f"Found auto-generated subtitles for language: {lang}")
+                                break
+                    
+                    # If we found subtitle files, parse them
+                    if subtitle_files:
+                        subtitle_text = self._parse_vtt_file(subtitle_files[0])
+                        
+                        if subtitle_text:
+                            word_count = len(subtitle_text.split())
+                            
+                            metadata = {
+                                'video_id': video_id,
+                                'video_title': info.get('title', ''),
+                                'duration': info.get('duration', 0),
+                                'word_count': word_count,
+                                'youtube_url': video_url
+                            }
+                            
+                            return TranscriptResult(
+                                text=subtitle_text,
+                                source=source,
+                                quality_score=quality_score,
+                                metadata=metadata
+                            )
+                    
+                    # No subtitles found
+                    logger.info(f"No subtitles available for video {video_id}")
                     return TranscriptResult(
                         text=None,
                         source=TranscriptSource.NOT_AVAILABLE,
                         quality_score=0.0,
-                        metadata={'error': str(e), 'video_id': video_id}
+                        metadata={'error': 'No subtitles available', 'video_id': video_id}
                     )
-            
-            # Fetch and format transcript
-            transcript_data = transcript.fetch()
-            
-            # Combine all text segments
-            full_text = ' '.join([entry['text'] for entry in transcript_data])
-            
-            # Calculate additional quality metrics
-            word_count = len(full_text.split())
-            has_timestamps = all('start' in entry for entry in transcript_data)
-            
-            metadata = {
-                'video_id': video_id,
-                'language': transcript.language,
-                'word_count': word_count,
-                'has_timestamps': has_timestamps,
-                'segment_count': len(transcript_data)
-            }
-            
-            return TranscriptResult(
-                text=full_text,
-                source=source,
-                quality_score=quality_score,
-                metadata=metadata
-            )
-            
+                    
         except Exception as e:
             logger.error(f"Error fetching transcript from YouTube: {e}")
             return TranscriptResult(
@@ -262,6 +289,42 @@ class YouTubePodcastDetector:
                 metadata={'error': str(e)}
             )
     
+    def _parse_vtt_file(self, vtt_file_path: str) -> Optional[str]:
+        """
+        Parse a VTT subtitle file and extract the text.
+        
+        Args:
+            vtt_file_path: Path to the VTT file
+            
+        Returns:
+            Extracted text without timestamps
+        """
+        try:
+            with open(vtt_file_path, 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+            
+            # Skip WEBVTT header and extract only text lines
+            text_lines = []
+            for line in lines:
+                line = line.strip()
+                # Skip empty lines, WEBVTT header, and timestamp lines
+                if line and not line.startswith('WEBVTT') and '-->' not in line:
+                    # Also skip lines that are just numbers (cue identifiers)
+                    if not line.isdigit():
+                        text_lines.append(line)
+            
+            # Join all text lines with spaces
+            full_text = ' '.join(text_lines)
+            
+            # Clean up duplicate spaces
+            full_text = ' '.join(full_text.split())
+            
+            return full_text
+            
+        except Exception as e:
+            logger.error(f"Error parsing VTT file: {e}")
+            return None
+    
     def fetch_transcript_with_timestamps(
         self,
         video_url: str
@@ -269,23 +332,17 @@ class YouTubePodcastDetector:
         """
         Fetch transcript with timestamps for each segment.
         
+        Note: This would require parsing VTT files with timestamps preserved.
+        Currently not implemented with yt-dlp approach.
+        
         Args:
             video_url: YouTube video URL
             
         Returns:
             List of dicts with 'text', 'start', and 'duration' keys
         """
-        try:
-            video_id = self.extract_video_id(video_url)
-            if not video_id:
-                return None
-            
-            transcript = YouTubeTranscriptApi.get_transcript(video_id)
-            return transcript
-            
-        except Exception as e:
-            logger.error(f"Error fetching transcript with timestamps: {e}")
-            return None
+        logger.warning("Transcript with timestamps not implemented with yt-dlp approach")
+        return None
     
     def check_youtube_availability(
         self,
