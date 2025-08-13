@@ -25,9 +25,9 @@ def calculate_ratio(
     :return: Average ratio of processing time per second of audio.
     :rtype: float
     """
-    assert len(audio_lengths_minutes) == len(processing_times_seconds), (
-        "Lists must be of equal length"
-    )
+    assert len(audio_lengths_minutes) == len(
+        processing_times_seconds
+    ), "Lists must be of equal length"
     total_ratio = 0
     for audio_length, processing_time in zip(
         audio_lengths_minutes, processing_times_seconds, strict=False
