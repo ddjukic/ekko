@@ -206,16 +206,19 @@ class UnifiedTranscriptFetcher:
                 from .openai_whisper_transcriber import OpenAIWhisperTranscriber
 
                 # Try to get API key from environment first, then fall back to credentials file
-                api_key = os.environ.get('OPENAI_API_KEY')
+                api_key = os.environ.get("OPENAI_API_KEY")
                 credentials_file = None
                 if not api_key:
                     credentials_file = os.path.join(
-                        os.path.dirname(__file__), '..', '..', 'creds', 'openai_credentials.json'
+                        os.path.dirname(__file__),
+                        "..",
+                        "..",
+                        "creds",
+                        "openai_credentials.json",
                     )
 
                 openai_transcriber = OpenAIWhisperTranscriber(
-                    api_key=api_key,
-                    credentials_file=credentials_file
+                    api_key=api_key, credentials_file=credentials_file
                 )
                 transcript_text = openai_transcriber.transcribe(
                     local_audio_path,

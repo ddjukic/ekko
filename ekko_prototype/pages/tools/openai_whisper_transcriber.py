@@ -68,7 +68,7 @@ class OpenAIWhisperTranscriber:
         :rtype: Optional[str]
         """
         # First check environment variable
-        api_key = os.environ.get('OPENAI_API_KEY')
+        api_key = os.environ.get("OPENAI_API_KEY")
         if api_key:
             logger.info("Using OpenAI API key from environment variable")
             return api_key
