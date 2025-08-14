@@ -59,7 +59,7 @@ class OpenAIWhisperTranscriber:
 
     def _load_api_key(self, credentials_file: str | None) -> str | None:
         """
-        Load API key from credentials file.
+        Load API key from environment or credentials file.
 
         :param credentials_file: Path to credentials file
         :type credentials_file: Optional[str]
@@ -67,6 +67,12 @@ class OpenAIWhisperTranscriber:
         :return: API key or None if not found
         :rtype: Optional[str]
         """
+        # First check environment variable
+        api_key = os.environ.get('OPENAI_API_KEY')
+        if api_key:
+            logger.info("Using OpenAI API key from environment variable")
+            return api_key
+
         if not credentials_file:
             # Try default location
             default_path = os.path.join(

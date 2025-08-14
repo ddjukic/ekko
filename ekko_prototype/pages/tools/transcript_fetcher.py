@@ -151,7 +151,7 @@ class UnifiedTranscriptFetcher:
             if is_available and youtube_url:
                 logger.info(f"Found YouTube video: {youtube_url}")
                 return self.youtube_detector.fetch_youtube_transcript(
-                    youtube_url, self.config.youtube_languages
+                    youtube_url, self.config.languages
                 )
 
             logger.info("Episode not found on YouTube")
@@ -201,9 +201,22 @@ class UnifiedTranscriptFetcher:
             if self.config.use_openai_whisper:
                 # Use OpenAI Whisper API
                 logger.info("Using OpenAI Whisper API for transcription")
+                import os
+
                 from .openai_whisper_transcriber import OpenAIWhisperTranscriber
 
-                openai_transcriber = OpenAIWhisperTranscriber()
+                # Try to get API key from environment first, then fall back to credentials file
+                api_key = os.environ.get('OPENAI_API_KEY')
+                credentials_file = None
+                if not api_key:
+                    credentials_file = os.path.join(
+                        os.path.dirname(__file__), '..', '..', 'creds', 'openai_credentials.json'
+                    )
+
+                openai_transcriber = OpenAIWhisperTranscriber(
+                    api_key=api_key,
+                    credentials_file=credentials_file
+                )
                 transcript_text = openai_transcriber.transcribe(
                     local_audio_path,
                     language="en",

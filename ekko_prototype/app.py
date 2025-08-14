@@ -109,9 +109,13 @@ def summarize_episode(episode_transcript: str) -> None:
         "prompts",
         "extract_wisdom_updated.md",
     )
+    # Only use credentials file if it exists, otherwise rely on environment variables
     creds_path = os.path.join(
         os.path.dirname(__file__), "creds", "openai_credentials.json"
     )
+    if not os.path.exists(creds_path):
+        creds_path = None
+
     summarizer = TranscriptSummarizer(
         system_file_path=prompt_path, credentials_file_path=creds_path
     )
@@ -176,9 +180,13 @@ def chat_with_podcast(episode_transcript: str, episode_title: str) -> None:
 
     with st.spinner("Loading the chatbot..."):
         # Load the chatbot interface
+        # Only use credentials file if it exists, otherwise rely on environment variables
         creds_path = os.path.join(
             os.path.dirname(__file__), "creds", "openai_credentials.json"
         )
+        if not os.path.exists(creds_path):
+            creds_path = None
+
         chatbot = ChatBotInterface(
             transcript_path=episode_transcript, credentials_path=creds_path
         )
@@ -338,9 +346,13 @@ def search_podcast() -> None:
         # Use absolute path or relative from current file location
         import os
 
+        # Only use credentials file if it exists, otherwise rely on environment variables
         creds_path = os.path.join(
             os.path.dirname(__file__), "creds", "api_credentials.json"
         )
+        if not os.path.exists(creds_path):
+            creds_path = None
+
         search = PodcastIndexSearch(creds_path)
         results = search.search_podcasts(podcast_name)
 
