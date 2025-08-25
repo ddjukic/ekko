@@ -9,10 +9,10 @@ on:
 
 env:
   PYTHON_VERSION: '3.13'
-  PROJECT_ID: ekko-468919
+  PROJECT_ID: ekko-app-prod
   SERVICE_NAME: ekko
   REGION: europe-west1
-  IMAGE: gcr.io/ekko-468919/ekko
+  IMAGE: europe-west1-docker.pkg.dev/ekko-app-prod/ekko-docker/ekko
 
 jobs:
   lint:
@@ -171,11 +171,11 @@ jobs:
       - name: Setup Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
         with:
-          project_id: ekko-468919
+          project_id: ekko-app-prod
 
-      - name: Configure Docker for GCR
+      - name: Configure Docker for Artifact Registry
         run: |
-          gcloud auth configure-docker
+          gcloud auth configure-docker europe-west1-docker.pkg.dev
 
       - name: Build Docker image
         run: |

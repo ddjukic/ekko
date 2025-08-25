@@ -14,7 +14,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-PROJECT_ID="ekko-468919"
+PROJECT_ID="ekko-app-prod"
 REGION="europe-west1"
 SERVICE_NAME="ekko"
 ENV_FILE=".env"
@@ -191,7 +191,7 @@ if ! gcloud auth list --filter=status:ACTIVE --format="value(account)" | grep -q
     print_warning "No active GCP account found"
     print_info "Attempting to authenticate with service account key..."
 
-    SERVICE_ACCOUNT_KEY="./ekko-468919-18b71c68e6b2.json"
+    SERVICE_ACCOUNT_KEY="./ekko-app-prod-service-account.json"
     if [ -f "$SERVICE_ACCOUNT_KEY" ]; then
         if [ "$DRY_RUN" = false ]; then
             gcloud auth activate-service-account --key-file="$SERVICE_ACCOUNT_KEY"
