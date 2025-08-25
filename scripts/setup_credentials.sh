@@ -292,8 +292,29 @@ print_info "Project number: $PROJECT_NUMBER"
 
 # Determine the service account
 DEPLOY_SERVICE_ACCOUNT="ekko-deploy@${PROJECT_ID}.iam.gserviceaccount.com"
+RUN_SERVICE_ACCOUNT="${SERVICE_NAME}-run@${PROJECT_ID}.iam.gserviceaccount.com"
 SERVICE_ACCOUNT="${SERVICE_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
 COMPUTE_SERVICE_ACCOUNT="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
+
+# Create Cloud Run service account if it doesn't exist (for gen2)
+print_info "Checking Cloud Run service account..."
+if ! gcloud iam service-accounts describe "$RUN_SERVICE_ACCOUNT" --project="$PROJECT_ID" &>/dev/null; then
+    print_info "Creating Cloud Run service account: $RUN_SERVICE_ACCOUNT"
+    if [ "$DRY_RUN" = false ]; then
+        gcloud iam service-accounts create "${SERVICE_NAME}-run" \
+            --display-name="Cloud Run Service Account for ${SERVICE_NAME}" \
+            --project="$PROJECT_ID"
+        
+        # Grant necessary roles to the Cloud Run service account
+        gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+            --member="serviceAccount:${RUN_SERVICE_ACCOUNT}" \
+            --role="roles/secretmanager.secretAccessor"
+    else
+        print_info "[DRY RUN] Would create service account: $RUN_SERVICE_ACCOUNT"
+    fi
+else
+    print_info "Cloud Run service account already exists: $RUN_SERVICE_ACCOUNT"
+fi
 
 # Check which service account to use
 if gcloud iam service-accounts describe "$DEPLOY_SERVICE_ACCOUNT" --project="$PROJECT_ID" &>/dev/null; then
@@ -374,8 +395,7 @@ ALL_SECRETS=(
     "auth-token"
 )
 
-# Grant access to each secret for both deployment and compute service accounts
-# The compute service account is what actually runs the Cloud Run service
+# Grant access to each secret for deployment, Cloud Run, and compute service accounts
 for secret in "${ALL_SECRETS[@]}"; do
     # Only grant access if the secret exists
     if gcloud secrets describe "$secret" --project="$PROJECT_ID" &>/dev/null; then
@@ -389,7 +409,15 @@ for secret in "${ALL_SECRETS[@]}"; do
                     print_warning "Could not grant deployment SA access to $secret (may already have access)"
                 }
 
-            # Also grant access to compute service account (for running Cloud Run)
+            # Grant access to Cloud Run service account (for gen2)
+            gcloud secrets add-iam-policy-binding "$secret" \
+                --member="serviceAccount:${RUN_SERVICE_ACCOUNT}" \
+                --role="roles/secretmanager.secretAccessor" \
+                --project="$PROJECT_ID" &>/dev/null || {
+                    print_warning "Could not grant Cloud Run SA access to $secret (may already have access)"
+                }
+
+            # Also grant access to compute service account (for running Cloud Run gen1)
             if [ -n "$PROJECT_NUMBER" ]; then
                 COMPUTE_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
                 gcloud secrets add-iam-policy-binding "$secret" \
@@ -450,12 +478,13 @@ done
 
 echo
 print_info "Next steps:"
-echo "  1. Deploy the application to Cloud Run:"
+echo "  1. Deploy the application to Cloud Run (gen2):"
 echo "     gcloud run deploy $SERVICE_NAME \\"
 echo "       --image gcr.io/$PROJECT_ID/$SERVICE_NAME:latest \\"
 echo "       --region $REGION \\"
-echo "       --platform managed \\"
+echo "       --execution-environment gen2 \\"
 echo "       --allow-unauthenticated \\"
+echo "       --service-account=${SERVICE_NAME}-run@${PROJECT_ID}.iam.gserviceaccount.com \\"
 echo "       --set-secrets=OPENAI_API_KEY=openai-api-key:latest \\"
 echo "       --set-secrets=PODCASTINDEX_API_KEY=podcastindex-api-key:latest \\"
 echo "       --set-secrets=PODCASTINDEX_API_SECRET=podcastindex-api-secret:latest"

@@ -215,7 +215,7 @@ jobs:
           gcloud run deploy ${{ env.SERVICE_NAME }} \
             --image ${{ env.IMAGE }}:${{ github.sha }} \
             --region ${{ env.REGION }} \
-            --platform managed \
+            --execution-environment gen2 \
             --allow-unauthenticated \
             --memory 2Gi \
             --cpu 2 \
@@ -227,7 +227,8 @@ jobs:
             --set-secrets="OPENAI_API_KEY=openai-api-key:latest" \
             --set-secrets="PODCASTINDEX_API_KEY=podcastindex-api-key:latest" \
             --set-secrets="PODCASTINDEX_API_SECRET=podcastindex-api-secret:latest" \
-            --set-secrets="YOUTUBE_API_KEY=youtube-api-key:latest"
+            --set-secrets="YOUTUBE_API_KEY=youtube-api-key:latest" \
+            --service-account=${{ env.SERVICE_NAME }}-run@${{ env.PROJECT_ID }}.iam.gserviceaccount.com
 
       - name: Get service URL
         run: |
