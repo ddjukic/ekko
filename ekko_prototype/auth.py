@@ -217,6 +217,9 @@ class SimpleAuth:
         :return: Tuple of (within_limit, remaining_transcripts)
         :rtype: Tuple[bool, int]
         """
+        # Ensure session state is initialized before checking
+        self._ensure_session_state()
+        
         # Reset daily counter if needed
         if datetime.now() - st.session_state.last_reset > timedelta(days=1):
             st.session_state.transcript_count = 0
@@ -232,6 +235,9 @@ class SimpleAuth:
         """
         Increment transcript usage counter.
         """
+        # Ensure session state is initialized before modifying
+        self._ensure_session_state()
+        
         st.session_state.transcript_count += 1
         self._save_user_data()
 
@@ -261,6 +267,9 @@ class SimpleAuth:
         """
         Display usage information in the sidebar.
         """
+        # Ensure session state is initialized before checking
+        self._ensure_session_state()
+        
         if st.session_state.authenticated:
             st.sidebar.divider()
             st.sidebar.markdown("### 👤 Account")
@@ -291,6 +300,9 @@ class SimpleAuth:
         :return: True if authenticated
         :rtype: bool
         """
+        # Ensure session state is initialized before checking
+        self._ensure_session_state()
+        
         if not st.session_state.authenticated:
             return self.login_form()
         return True
@@ -302,6 +314,9 @@ class SimpleAuth:
         :return: True if user can transcribe
         :rtype: bool
         """
+        # Ensure session state is initialized before checking
+        self._ensure_session_state()
+        
         if not st.session_state.authenticated:
             st.error("Please sign in to use transcription features.")
             return False
